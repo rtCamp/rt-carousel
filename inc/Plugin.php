@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace Rt_Carousel;
 
 use Rt_Carousel\Traits\Singleton;
+use WP_Block;
+use WP_HTML_Tag_Processor;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -41,6 +43,7 @@ class Plugin {
 		add_action( 'init', [ $this, 'register_block_patterns' ] );
 		add_action( 'admin_notices', [ $this, 'legacy_plugin_notice' ] );
 		add_action( 'network_admin_notices', [ $this, 'legacy_plugin_notice' ] );
+		add_filter( 'render_block_carousel-kit/carousel-slide', [ $this, 'handle_lazy_load_images' ], 10, 3 );
 	}
 
 	/**
@@ -259,5 +262,48 @@ class Plugin {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Add loading="lazy" to images in carousel slides.
+	 *
+	 * @param string   $block_content The block content.
+	 * @param array    $parsed_block  The parsed block.
+	 * @param WP_Block $instance      The block instance.
+	 *
+	 * @return string Modified block content.
+	 */
+	public function handle_lazy_load_images( string $block_content, array $parsed_block, ?WP_Block $instance ): string {
+		// Bail early if the parent block to check lazyLoadImages setting is not set.
+		if ( ! isset( $instance->context["carousel-kit/carousel/lazyLoadImages"] ) ) {
+			return $block_content;
+		}
+
+		$lazy_load = $instance->context["carousel-kit/carousel/lazyLoadImages"];
+
+		// If lazy loading is disabled, return as-is.
+		if ( ! $lazy_load ) {
+			return $block_content;
+		}
+
+		// Check if this slide has disableLazyLoadImages set.
+		$slide_attrs = $parsed_block['attrs'] ?? array();
+		$disable_lazy = isset( $slide_attrs['disableLazyLoadImages'] ) ? $slide_attrs['disableLazyLoadImages'] : false;
+
+		if ( $disable_lazy ) {
+			return $block_content;
+		}
+
+		// Use WP_HTML_Tag_Processor to add loading="lazy" to <img> tags.
+		$processor = new WP_HTML_Tag_Processor( $block_content );
+
+		while ( $processor->next_tag( 'img' ) ) {
+			// Only add if loading attribute is not already set.
+			if ( null === $processor->get_attribute( 'loading' ) ) {
+				$processor->set_attribute( 'loading', 'lazy' );
+			}
+		}
+
+		return $processor->get_updated_html();
 	}
 }
