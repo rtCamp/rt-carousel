@@ -51,7 +51,7 @@ export default function Edit( {
 						checked={ disableLazyLoadImages }
 						onChange={ ( value ) => setAttributes( { disableLazyLoadImages: value } ) }
 						help={ __(
-							'Override carousel lazy loading for this slide.',
+							'Disable lazy loading for images in this slide (when carousel lazy loading is enabled).',
 							'carousel-kit',
 						) }
 					/>
