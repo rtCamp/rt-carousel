@@ -9,7 +9,8 @@
 	"description": "Carousel container using Embla and Interactivity API.",
 	"textdomain": "rt-carousel",
 	"providesContext": {
-		"rt-carousel/carousel/allowedSlideBlocks": "allowedSlideBlocks"
+		"rt-carousel/carousel/allowedSlideBlocks": "allowedSlideBlocks",
+		"rt-carousel/carousel/lazyLoadImages": "lazyLoadImages"
 	},
 	"supports": {
 		"interactivity": true,

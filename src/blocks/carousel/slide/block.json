@@ -21,7 +21,8 @@
 		}
 	},
 	"usesContext": [
-		"rt-carousel/carousel/allowedSlideBlocks"
+		"rt-carousel/carousel/allowedSlideBlocks",
+		"rt-carousel/carousel/lazyLoadImages"
 	],
 	"editorScript": "file:./index.js"
 }
