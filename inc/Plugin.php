@@ -299,11 +299,10 @@ class Plugin {
 
 		while ( $processor->next_tag( 'img' ) ) {
 			// Only add if loading attribute is not already set.
-			if ( null !== $processor->get_attribute( 'loading' ) ) {
-				continue;
+			if ( null === $processor->get_attribute( 'loading' ) ) {
+				$processor->set_attribute( 'loading', 'lazy' );
 			}
 
-			$processor->set_attribute( 'loading', 'lazy' );
 		}
 
 		return $processor->get_updated_html();
