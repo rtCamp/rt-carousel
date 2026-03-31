@@ -24,6 +24,7 @@ export type CarouselAttributes = {
 export type CarouselViewportAttributes = Record<string, never>;
 export type CarouselSlideAttributes = {
 	verticalAlignment?: BlockVerticalAlignmentToolbar.Value;
+	disableLazyLoadImages?: boolean;
 };
 export type CarouselControlsAttributes = Record<string, never>;
 export type CarouselDotsAttributes = Record<string, never>;
