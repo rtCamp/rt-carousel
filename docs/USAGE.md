@@ -23,6 +23,7 @@ The parent block acts as the controller and wrapper. It handles configuration, s
 | `axis`                      | string  | `'x'`         | Carousel axis direction (`'x'` for horizontal, `'y'` for vertical). |
 | `direction`                 | string  | `'ltr'`       | Carousel item direction: `'ltr'` (left-to-right) or `'rtl'` (right-to-left). |
 | `slidesToScroll`            | number  | `1`           | Number of slides to scroll per navigation action. |
+| `lazyLoadImages`            | boolean | `true`        | Lazy load images in the slides.               |
 
 ---
 
