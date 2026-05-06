@@ -43,7 +43,7 @@ class Plugin {
 		add_action( 'init', [ $this, 'register_block_patterns' ] );
 		add_action( 'admin_notices', [ $this, 'legacy_plugin_notice' ] );
 		add_action( 'network_admin_notices', [ $this, 'legacy_plugin_notice' ] );
-		add_filter( 'render_block_carousel-kit/carousel-slide', [ $this, 'handle_lazy_load_images' ], 10, 3 );
+		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'handle_lazy_load_images' ], 10, 3 );
 	}
 
 	/**
@@ -274,35 +274,39 @@ class Plugin {
 	 * @return string Modified block content.
 	 */
 	public function handle_lazy_load_images( string $block_content, array $parsed_block, WP_Block $instance ): string {
-		// Bail early if the parent block to check lazyLoadImages setting is not set.
-		if ( ! isset( $instance->context['carousel-kit/carousel/lazyLoadImages'] ) ) {
+		// Bail early if the lazyLoadImages setting is not set.
+		if ( ! isset( $instance->attributes['lazyLoadImages'] ) ) {
 			return $block_content;
 		}
 
-		$lazy_load = $instance->context['carousel-kit/carousel/lazyLoadImages'];
+		$lazy_load = (bool) $instance->attributes['lazyLoadImages'];
 
 		// If lazy loading is disabled, return as-is.
 		if ( ! $lazy_load ) {
 			return $block_content;
 		}
 
-		// Check if this slide has disableLazyLoadImages set.
-		$slide_attrs  = $parsed_block['attrs'] ?? [];
-		$disable_lazy = isset( $slide_attrs['disableLazyLoadImages'] ) ? $slide_attrs['disableLazyLoadImages'] : false;
-
-		if ( $disable_lazy ) {
-			return $block_content;
-		}
-
 		// Use WP_HTML_Tag_Processor to add loading="lazy" to <img> tags.
 		$processor = new WP_HTML_Tag_Processor( $block_content );
+		$slide_index = 0;
 
-		while ( $processor->next_tag( 'img' ) ) {
-			// Only add if loading attribute is not already set.
-			if ( null === $processor->get_attribute( 'loading' ) ) {
-				$processor->set_attribute( 'loading', 'lazy' );
+		while ( $processor->next_tag(  ) ) {
+			$tag = $processor->get_tag();
+
+			// Keep a track of the slide index to determine if an image is in the first slide or subsequent slides.
+			if ( 'DIV' === $tag && $processor->has_class( 'embla__slide' ) ) {
+				$slide_index++;
 			}
 
+			// If it's the first slide, set loading="lazy". For subsequent slides, set loading="eager" and fetchpriority="high".
+			if ( 'IMG' === $tag && null === $processor->get_attribute( 'loading' ) ) {
+				if ( 1 === $slide_index ) {
+					$processor->set_attribute( 'loading', 'eager' );
+					$processor->set_attribute( 'fetchpriority', 'high' );
+				} else {
+					$processor->set_attribute( 'loading', 'lazy' );
+				}
+			}
 		}
 
 		return $processor->get_updated_html();
