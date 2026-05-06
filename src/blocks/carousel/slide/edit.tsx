@@ -3,10 +3,7 @@ import {
 	useInnerBlocksProps,
 	BlockControls,
 	BlockVerticalAlignmentToolbar,
-	InspectorControls,
 } from '@wordpress/block-editor';
-import { PanelBody, ToggleControl } from '@wordpress/components';
-import { __ } from '@wordpress/i18n';
 import type { CarouselSlideAttributes } from '../types';
 
 export default function Edit( {
@@ -20,7 +17,7 @@ export default function Edit( {
 } ) {
 	const allowedBlocks = context[ 'rt-carousel/carousel/allowedSlideBlocks' ];
 
-	const { verticalAlignment, disableLazyLoadImages = false } = attributes;
+	const { verticalAlignment } = attributes;
 
 	const blockProps = useBlockProps( {
 		className: `embla__slide${
@@ -44,19 +41,6 @@ export default function Edit( {
 					}
 				/>
 			</BlockControls>
-			<InspectorControls>
-				<PanelBody title={ __( 'Slide Settings', 'carousel-kit' ) } initialOpen={ true }>
-					<ToggleControl
-						label={ __( 'Disable Lazy Load Images', 'carousel-kit' ) }
-						checked={ disableLazyLoadImages }
-						onChange={ ( value ) => setAttributes( { disableLazyLoadImages: value } ) }
-						help={ __(
-							'Disable lazy loading for images in this slide (when carousel lazy loading is enabled).',
-							'carousel-kit',
-						) }
-					/>
-				</PanelBody>
-			</InspectorControls>
 			<div { ...innerBlocksProps } />
 		</>
 	);
