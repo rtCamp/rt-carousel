@@ -43,7 +43,7 @@ class Plugin {
 		add_action( 'init', [ $this, 'register_block_patterns' ] );
 		add_action( 'admin_notices', [ $this, 'legacy_plugin_notice' ] );
 		add_action( 'network_admin_notices', [ $this, 'legacy_plugin_notice' ] );
-		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'handle_lazy_load_images' ], 10, 3 );
+		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'handle_lazy_load_images' ], 16, 3 );
 	}
 
 	/**
@@ -274,6 +274,11 @@ class Plugin {
 	 * @return string Modified block content.
 	 */
 	public function handle_lazy_load_images( string $block_content, array $parsed_block, WP_Block $instance ): string {
+		// $instance was added in WP 5.9.0, if it's not available, return the block content unmodified.
+		if ( ! $instance ) {
+			return $block_content;
+		}
+
 		// Bail early if the lazyLoadImages setting is not set.
 		if ( ! isset( $instance->attributes['lazyLoadImages'] ) ) {
 			return $block_content;
