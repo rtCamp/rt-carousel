@@ -138,6 +138,7 @@ class Migration {
 			// LIKE matched but REPLACE changed nothing — likely a collation mismatch.
 			// Break rather than return false to avoid infinite retries across requests.
 			if ( 0 === $result ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Important debug info for a migration failure that would otherwise cause infinite retries.
 				error_log( 'rt_carousel migration: LIKE matched posts but REPLACE changed nothing — possible collation mismatch.' );
 				break;
 			}
