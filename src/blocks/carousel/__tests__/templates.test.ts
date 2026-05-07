@@ -98,6 +98,28 @@ describe( 'Slide Templates', () => {
 				'invalid',
 			);
 		} );
+
+		it( 'drops duplicate template names returned by filters', () => {
+			mockedApplyFilters.mockImplementationOnce( ( _hookName: string, value: unknown ) => [
+				...( value as SlideTemplate[] ),
+				{
+					name: 'text',
+					label: 'Duplicate Text',
+					description: 'Duplicate entry',
+					icon: 'format-quote',
+					innerBlocks: () => [],
+				},
+			] );
+
+			const templates = getSlideTemplates();
+			const textTemplates = templates.filter( ( template ) => template.name === 'text' );
+
+			expect( textTemplates ).toHaveLength( 1 );
+			expect( consoleWarnSpy ).toHaveBeenCalledWith(
+				'rtcamp.carouselKit.slideTemplates: dropping duplicate template name "text".',
+				expect.objectContaining( { name: 'text', label: 'Duplicate Text' } ),
+			);
+		} );
 	} );
 
 	describe( 'Template Shape', () => {

@@ -166,7 +166,23 @@ export function getSlideTemplates(): SlideTemplate[] {
 			);
 			return false;
 		} );
-		return valid;
+
+		// De-duplicate by name to prevent React key collisions from filter callbacks.
+		const seenNames = new Set< string >();
+		const deduped = valid.filter( ( template ) => {
+			if ( seenNames.has( template.name ) ) {
+				// eslint-disable-next-line no-console
+				console.warn(
+					`rtcamp.carouselKit.slideTemplates: dropping duplicate template name "${ template.name }".`,
+					template,
+				);
+				return false;
+			}
+			seenNames.add( template.name );
+			return true;
+		} );
+
+		return deduped;
 	}
 
 	// eslint-disable-next-line no-console
