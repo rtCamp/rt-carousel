@@ -2,21 +2,21 @@
  * Editor-only styles for Carousel
  */
 
-:root {
+.rt-carousel {
 	// Border colors
-	--carousel-kit-border-default: #ddd;
-	--carousel-kit-border-dashed: #ccc;
+	--rt-carousel-border-default: #ddd;
+	--rt-carousel-border-dashed: #ccc;
 
 	// Background colors
-	--carousel-kit-bg-white: #fff;
-	--carousel-kit-bg-icon: #f0f0f0;
+	--rt-carousel-bg-white: #fff;
+	--rt-carousel-bg-icon: #f0f0f0;
 
 	// Text colors
-	--carousel-kit-text-primary: #1e1e1e;
-	--carousel-kit-text-muted: #757575;
+	--rt-carousel-text-primary: #1e1e1e;
+	--rt-carousel-text-muted: #757575;
 
 	// Accent / interactive (falls back to WP admin theme color)
-	--carousel-kit-accent: var(--wp-admin-theme-color, #3858e9);
+	--rt-carousel-accent: var(--wp-admin-theme-color, #3858e9);
 }
 
 // ── Setup chooser ────────────────────────────────────────────────────────────
@@ -57,9 +57,9 @@
 		align-items: center;
 		gap: 6px;
 		padding: 16px 12px;
-		border: 1px solid var(--carousel-kit-border-default);
+		border: 1px solid var(--rt-carousel-border-default);
 		border-radius: 4px;
-		background: var(--carousel-kit-bg-white);
+		background: var(--rt-carousel-bg-white);
 		cursor: pointer;
 		text-align: center;
 		transition:
@@ -68,8 +68,8 @@
 
 		&:hover,
 		&:focus-visible {
-			border-color: var(--carousel-kit-accent);
-			box-shadow: 0 0 0 1px var(--carousel-kit-accent);
+			border-color: var(--rt-carousel-accent);
+			box-shadow: 0 0 0 1px var(--rt-carousel-accent);
 			outline: none;
 		}
 	}
@@ -81,8 +81,8 @@
 		width: 48px;
 		height: 48px;
 		border-radius: 50%;
-		background: var(--carousel-kit-bg-icon);
-		color: var(--carousel-kit-text-primary);
+		background: var(--rt-carousel-bg-icon);
+		color: var(--rt-carousel-text-primary);
 	}
 
 	&__label {
@@ -93,7 +93,7 @@
 
 	&__description {
 		font-size: 12px;
-		color: var(--carousel-kit-text-muted);
+		color: var(--rt-carousel-text-muted);
 		line-height: 1.4;
 	}
 
@@ -112,7 +112,7 @@
 	justify-content: center;
 	align-items: center;
 	padding: 2rem;
-	border: 1px dashed var(--carousel-kit-border-dashed);
+	border: 1px dashed var(--rt-carousel-border-dashed);
 	border-radius: 2px;
 	box-sizing: border-box;
 }
@@ -127,16 +127,16 @@
 
 	/* Ensure selectable area */
 	padding: 0.625rem;
-	border: 1px dashed var(--carousel-kit-border-dashed);
+	border: 1px dashed var(--rt-carousel-border-dashed);
 	box-sizing: border-box;
 
 	&.is-selected {
-		border-color: var(--carousel-kit-accent);
+		border-color: var(--rt-carousel-accent);
 	}
 
 	/* Add dashed border in editor to make it visible if empty */
 	&.is-empty {
-		border: 1px dashed var(--carousel-kit-border-dashed);
+		border: 1px dashed var(--rt-carousel-border-dashed);
 		min-height: 50px;
 	}
 
