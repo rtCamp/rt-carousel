@@ -94,6 +94,8 @@ export default function Edit( {
 
 	const showSetup = ! hasInnerBlocks;
 	const prevShowSetup = useRef( showSetup );
+	const slideCountOptionsRef = useRef< HTMLDivElement >( null );
+	const shouldRestoreSlideCountFocus = useRef( false );
 
 	// Reset the setup flow when the placeholder reopens after all inner blocks are removed.
 	// When setup completes, focus the carousel block so focus stays in the canvas.
@@ -105,14 +107,33 @@ export default function Edit( {
 		}
 
 		if ( prevShowSetup.current && ! showSetup ) {
-			const iframe = document.querySelector< HTMLIFrameElement >( 'iframe[name="editor-canvas"]' );
-			const blockNode =
-				iframe?.contentDocument?.getElementById( `block-${ clientId }` ) ??
-				document.getElementById( `block-${ clientId }` );
-			blockNode?.focus();
+			if ( typeof document !== 'undefined' ) {
+				const iframe = document.querySelector< HTMLIFrameElement >( 'iframe[name="editor-canvas"]' );
+				const blockNode =
+					iframe?.contentDocument?.getElementById( `block-${ clientId }` ) ??
+					document.getElementById( `block-${ clientId }` );
+				blockNode?.focus();
+			}
 		}
 		prevShowSetup.current = showSetup;
 	}, [ showSetup, clientId ] );
+
+	// After navigating back from template step, restore focus to first slide-count button.
+	useEffect( () => {
+		if ( ! showSetup || setupStep !== 'slide-count' || ! shouldRestoreSlideCountFocus.current ) {
+			return;
+		}
+
+		const rafId = requestAnimationFrame( () => {
+			const firstBtn = slideCountOptionsRef.current?.querySelector< HTMLButtonElement >(
+				'button',
+			);
+			firstBtn?.focus();
+			shouldRestoreSlideCountFocus.current = false;
+		} );
+
+		return () => cancelAnimationFrame( rafId );
+	}, [ showSetup, setupStep ] );
 
 	// Fetch registered block types for the allowed-blocks token field
 	const blockTypes = useSelect( ( select ) => {
@@ -491,7 +512,10 @@ export default function Edit( {
 					>
 						{ setupStep === 'slide-count' && (
 							<>
-								<div className="rt-carousel-setup__options">
+								<div
+									className="rt-carousel-setup__options"
+									ref={ slideCountOptionsRef }
+								>
 									{ [ 1, 2, 3, 4 ].map( ( count ) => (
 										<Button
 											key={ count }
@@ -518,7 +542,10 @@ export default function Edit( {
 							<TemplatePicker
 								templates={ slideTemplates }
 								onSelect={ handleTemplateSelected }
-								onBack={ () => setSetupStep( 'slide-count' ) }
+								onBack={ () => {
+									shouldRestoreSlideCountFocus.current = true;
+									setSetupStep( 'slide-count' );
+								} }
 							/>
 						) }
 					</Placeholder>
