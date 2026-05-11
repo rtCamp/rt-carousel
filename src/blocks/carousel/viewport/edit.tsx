@@ -13,7 +13,10 @@ import type { CarouselViewportAttributes, BlockEditorSelectors } from '../types'
 import { useContext, useEffect, useRef, useCallback, useState } from '@wordpress/element';
 import { useMergeRefs } from '@wordpress/compose';
 import { EditorCarouselContext } from '../editor-context';
-import EmblaCarousel, { type EmblaCarouselType } from 'embla-carousel';
+import EmblaCarousel, {
+	type EmblaCarouselType,
+	type EmblaOptionsType,
+} from 'embla-carousel';
 import { useCarouselObservers } from '../hooks/useCarouselObservers';
 import { DYNAMIC_LIST_CONTAINER_SELECTOR } from '../dynamic-list-selectors';
 
@@ -176,11 +179,19 @@ export default function Edit( {
 
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const options = carouselOptions as any;
+			const rawContainScroll = options?.containScroll;
+			let containScroll: NonNullable<EmblaOptionsType['containScroll']> =
+				'trimSnaps';
+			if ( [ 'trimSnaps', 'keepSnaps' ].includes( rawContainScroll ) ) {
+				containScroll = rawContainScroll;
+			} else if ( rawContainScroll === '' ) {
+				containScroll = false;
+			}
 
 			embla = EmblaCarousel( viewport, {
 				loop: options?.loop ?? false,
 				dragFree: options?.dragFree ?? false,
-				containScroll: options?.containScroll || 'trimSnaps',
+				containScroll,
 				axis: options?.axis || 'x',
 				align: options?.align || 'start',
 				direction: options?.direction || 'ltr',
