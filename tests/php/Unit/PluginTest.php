@@ -4,7 +4,7 @@
  *
  * Tests cover:
  * - Block category registration
- * - Block registration (all 5 carousel blocks)
+ * - Block registration (all carousel blocks)
  * - Pattern category registration
  * - Block pattern registration and caching
  * - Error handling and edge cases
@@ -34,6 +34,7 @@ class PluginTest extends UnitTestCase {
 	private const EXPECTED_BLOCKS = [
 		'carousel',
 		'carousel/controls',
+		'carousel/counter',
 		'carousel/dots',
 		'carousel/progress',
 		'carousel/viewport',
@@ -150,7 +151,7 @@ class PluginTest extends UnitTestCase {
 		$instance = $this->getPluginInstance();
 		$this->invokeMethod( $instance, 'register_blocks' );
 
-		$this->assertCount( 6, $registered_blocks );
+		$this->assertCount( 7, $registered_blocks );
 
 		// Verify each expected block is registered
 		foreach ( self::EXPECTED_BLOCKS as $block ) {
@@ -173,7 +174,7 @@ class PluginTest extends UnitTestCase {
 	public function test_register_blocks_handles_missing_build_path(): void {
 		// The actual behavior check: register_block_type should be called
 		// for each block when the constant is defined (as it is in our tests).
-		Functions\expect( 'register_block_type' )->times( 6 );
+		Functions\expect( 'register_block_type' )->times( 7 );
 
 		$instance = $this->getPluginInstance();
 		$this->invokeMethod( $instance, 'register_blocks' );

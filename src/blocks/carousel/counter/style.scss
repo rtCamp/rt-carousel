@@ -1,0 +1,15 @@
+.rt-carousel-counter {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--rt-carousel-counter-gap, 0);
+	color: var(--rt-carousel-counter-color, inherit);
+	font-size: var(--rt-carousel-counter-font-size, 1rem);
+	font-weight: var(--rt-carousel-counter-font-weight, 500);
+	line-height: 1;
+	white-space: nowrap;
+}
+
+.rt-carousel-counter__separator,
+.rt-carousel-counter__total {
+	opacity: var(--rt-carousel-counter-muted-opacity, 0.72);
+}

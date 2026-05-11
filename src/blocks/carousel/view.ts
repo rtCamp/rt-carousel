@@ -56,6 +56,17 @@ const getProgress = (): number => {
 	return Math.max( 0, Math.min( 1, scrollProgress || 0 ) );
 };
 
+const getSnapCount = ( context: CarouselContext ): number => {
+	return Math.max( context.scrollSnaps?.length || context.slideCount || 0, 1 );
+};
+
+const getCurrentSnap = ( context: CarouselContext ): number => {
+	return Math.min(
+		Math.max( ( context.selectedIndex || 0 ) + 1, 1 ),
+		getSnapCount( context ),
+	);
+};
+
 const getSlideAnnouncement = (
 	context: CarouselContext,
 	selectedIndex: number,
@@ -192,6 +203,20 @@ store( 'rt-carousel/carousel', {
 			};
 			const index = ( snap?.index || 0 ) + 1;
 			return context.ariaLabelPattern.replace( '%d', index.toString() );
+		},
+		getCurrentCount: () => {
+			return getCurrentSnap( getContext<CarouselContext>() ).toString();
+		},
+		getTotalCount: () => {
+			return getSnapCount( getContext<CarouselContext>() ).toString();
+		},
+		getCountLabel: () => {
+			const context = getContext<CarouselContext>();
+			const current = getCurrentSnap( context ).toString();
+			const total = getSnapCount( context ).toString();
+			return ( context.countLabelPattern || 'Slide {{currentSlide}} of {{totalSlides}}' )
+				.replace( '{{currentSlide}}', current )
+				.replace( '{{totalSlides}}', total );
 		},
 		getProgressBarNow: () => {
 			return Math.round( getProgress() * 100 );

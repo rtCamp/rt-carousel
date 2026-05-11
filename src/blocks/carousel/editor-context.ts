@@ -12,6 +12,7 @@ export type EditorCarouselContextType = {
 	scrollProgress: number;
 	setScrollProgress: ( value: number ) => void;
 	selectedIndex: number;
+	scrollSnaps: number[];
 	slideCount: number;
 	carouselOptions: Omit<Partial<CarouselAttributes>, 'slidesToScroll'> & {
 		slidesToScroll?: number | string;
@@ -29,6 +30,7 @@ const defaultValue: EditorCarouselContextType = {
 	scrollProgress: 0,
 	setScrollProgress: () => {},
 	selectedIndex: 0,
+	scrollSnaps: [],
 	slideCount: 0,
 	carouselOptions: {},
 };

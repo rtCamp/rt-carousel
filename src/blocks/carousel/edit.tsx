@@ -63,6 +63,7 @@ export default function Edit( {
 	const [ pendingSlideCount, setPendingSlideCount ] = useState<number>( 0 );
 	const [ scrollProgress, setScrollProgress ] = useState( 0 );
 	const [ selectedIndex, setSelectedIndex ] = useState( 0 );
+	const [ scrollSnaps, setScrollSnaps ] = useState<number[]>( [] );
 	const [ slideCount, setSlideCount ] = useState( 0 );
 
 	const slideTemplates = useMemo( getSlideTemplates, [ getSlideTemplates ] );
@@ -181,6 +182,7 @@ export default function Edit( {
 			scrollProgress,
 			setScrollProgress,
 			selectedIndex,
+			scrollSnaps,
 			slideCount,
 			carouselOptions,
 		} ),
@@ -190,6 +192,7 @@ export default function Edit( {
 			canScrollNext,
 			scrollProgress,
 			selectedIndex,
+			scrollSnaps,
 			slideCount,
 			carouselOptions,
 			setEmblaApi,
@@ -211,6 +214,7 @@ export default function Edit( {
 
 		const updateState = () => {
 			setSelectedIndex( emblaApi.selectedScrollSnap() );
+			setScrollSnaps( emblaApi.scrollSnapList() );
 			setSlideCount( emblaApi.slideNodes().length );
 			updateScrollProgress();
 		};
@@ -242,6 +246,7 @@ export default function Edit( {
 			},
 			[
 				createBlock( 'rt-carousel/carousel-controls', {} ),
+				createBlock( 'rt-carousel/carousel-counter', {} ),
 				createBlock( 'rt-carousel/carousel-dots', {} ),
 			],
 		);
