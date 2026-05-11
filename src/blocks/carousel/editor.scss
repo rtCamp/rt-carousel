@@ -17,6 +17,26 @@
 
 	// Accent / interactive (falls back to WP admin theme color)
 	--rt-carousel-accent: var(--wp-admin-theme-color, #3858e9);
+
+	/* Ensure selectable area */
+	padding: 0.625rem;
+	border: 1px dashed var(--rt-carousel-border-dashed);
+	box-sizing: border-box;
+
+	&.is-selected {
+		border-color: var(--rt-carousel-accent);
+	}
+
+	/* Add dashed border in editor to make it visible if empty */
+	&.is-empty {
+		border: 1px dashed var(--rt-carousel-border-dashed);
+		min-height: 50px;
+	}
+
+	// Vertical Axis adjustments in editor
+	&[data-axis="y"] .embla__container {
+		height: 100% !important;
+	}
 }
 
 // ── Setup chooser ────────────────────────────────────────────────────────────
@@ -121,27 +141,4 @@
 // easy to click and populate. Does not affect the frontend.
 .rt-carousel .embla__slide {
 	min-height: 200px;
-}
-
-.rt-carousel {
-
-	/* Ensure selectable area */
-	padding: 0.625rem;
-	border: 1px dashed var(--rt-carousel-border-dashed);
-	box-sizing: border-box;
-
-	&.is-selected {
-		border-color: var(--rt-carousel-accent);
-	}
-
-	/* Add dashed border in editor to make it visible if empty */
-	&.is-empty {
-		border: 1px dashed var(--rt-carousel-border-dashed);
-		min-height: 50px;
-	}
-
-	// Vertical Axis adjustments in editor
-	&[data-axis="y"] .embla__container {
-		height: 100% !important;
-	}
 }
