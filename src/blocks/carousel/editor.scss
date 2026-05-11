@@ -2,22 +2,102 @@
  * Editor-only styles for Carousel
  */
 
+.rt-carousel {
+	// Border colors
+	--rt-carousel-border-default: #ddd;
+	--rt-carousel-border-dashed: #ccc;
+
+	// Background colors
+	--rt-carousel-bg-white: #fff;
+	--rt-carousel-bg-icon: #f0f0f0;
+
+	// Text colors
+	--rt-carousel-text-primary: #1e1e1e;
+	--rt-carousel-text-muted: #757575;
+
+	// Accent / interactive (falls back to WP admin theme color)
+	--rt-carousel-accent: var(--wp-admin-theme-color, #3858e9);
+}
+
 // ── Setup chooser ────────────────────────────────────────────────────────────
 .rt-carousel-setup {
 
-	.rt-carousel-setup__options {
+	&__options {
 		display: flex;
 		gap: 8px;
 		flex-wrap: wrap;
 		margin-bottom: 12px;
 	}
 
-	.rt-carousel-setup__option {
+	&__option {
 		min-width: 80px;
 		justify-content: center;
 	}
 
-	.rt-carousel-setup__skip {
+	&__skip {
+		display: block;
+		margin-top: 4px;
+	}
+}
+
+// ── Template picker ──────────────────────────────────────────────────────────
+.rt-carousel-template-picker {
+	width: 100%;
+
+	&__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+		gap: 12px;
+		margin-bottom: 12px;
+	}
+
+	&__item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		padding: 16px 12px;
+		border: 1px solid var(--rt-carousel-border-default);
+		border-radius: 4px;
+		background: var(--rt-carousel-bg-white);
+		cursor: pointer;
+		text-align: center;
+		transition:
+			border-color 0.15s,
+			box-shadow 0.15s;
+
+		&:hover,
+		&:focus-visible {
+			border-color: var(--rt-carousel-accent);
+			box-shadow: 0 0 0 1px var(--rt-carousel-accent);
+			outline: none;
+		}
+	}
+
+	&__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background: var(--rt-carousel-bg-icon);
+		color: var(--rt-carousel-text-primary);
+	}
+
+	&__label {
+		font-weight: 600;
+		font-size: 13px;
+		line-height: 1.3;
+	}
+
+	&__description {
+		font-size: 12px;
+		color: var(--rt-carousel-text-muted);
+		line-height: 1.4;
+	}
+
+	&__back {
 		display: block;
 		margin-top: 4px;
 	}
@@ -32,7 +112,7 @@
 	justify-content: center;
 	align-items: center;
 	padding: 2rem;
-	border: 1px dashed #ccc;
+	border: 1px dashed var(--rt-carousel-border-dashed);
 	border-radius: 2px;
 	box-sizing: border-box;
 }
@@ -47,16 +127,16 @@
 
 	/* Ensure selectable area */
 	padding: 0.625rem;
-	border: 1px dashed #ccc;
+	border: 1px dashed var(--rt-carousel-border-dashed);
 	box-sizing: border-box;
 
 	&.is-selected {
-		border-color: var(--wp-admin-theme-color);
+		border-color: var(--rt-carousel-accent);
 	}
 
 	/* Add dashed border in editor to make it visible if empty */
 	&.is-empty {
-		border: 1px dashed #ccc;
+		border: 1px dashed var(--rt-carousel-border-dashed);
 		min-height: 50px;
 	}
 

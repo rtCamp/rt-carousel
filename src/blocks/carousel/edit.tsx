@@ -20,11 +20,15 @@ import {
 } from '@wordpress/components';
 import { plus } from '@wordpress/icons';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { useState, useMemo, useCallback, useEffect } from '@wordpress/element';
+import { useState, useMemo, useCallback, useEffect, useRef } from '@wordpress/element';
 import { createBlock, type BlockConfiguration } from '@wordpress/blocks';
 import type { CarouselAttributes } from './types';
 import { EditorCarouselContext } from './editor-context';
 import type { EmblaCarouselType } from 'embla-carousel';
+import { getSlideTemplates, type SlideTemplate } from './templates';
+import TemplatePicker from './components/TemplatePicker';
+
+type SetupStep = 'slide-count' | 'template';
 
 export default function Edit( {
 	attributes,
@@ -55,9 +59,13 @@ export default function Edit( {
 	const [ emblaApi, setEmblaApi ] = useState<EmblaCarouselType | undefined>();
 	const [ canScrollPrev, setCanScrollPrev ] = useState( false );
 	const [ canScrollNext, setCanScrollNext ] = useState( false );
+	const [ setupStep, setSetupStep ] = useState<SetupStep>( 'slide-count' );
+	const [ pendingSlideCount, setPendingSlideCount ] = useState<number>( 0 );
 	const [ scrollProgress, setScrollProgress ] = useState( 0 );
 	const [ selectedIndex, setSelectedIndex ] = useState( 0 );
 	const [ slideCount, setSlideCount ] = useState( 0 );
+
+	const slideTemplates = useMemo( getSlideTemplates, [ getSlideTemplates ] );
 
 	const { replaceInnerBlocks, insertBlock } = useDispatch( 'core/block-editor' );
 
@@ -85,6 +93,47 @@ export default function Edit( {
 	}, [ insertBlock, viewportClientId ] );
 
 	const showSetup = ! hasInnerBlocks;
+	const prevShowSetup = useRef( showSetup );
+	const slideCountOptionsRef = useRef< HTMLDivElement >( null );
+	const shouldRestoreSlideCountFocus = useRef( false );
+
+	// Reset the setup flow when the placeholder reopens after all inner blocks are removed.
+	// When setup completes, focus the carousel block so focus stays in the canvas.
+	// Supports both iframed and non-iframed editors.
+	useEffect( () => {
+		if ( ! prevShowSetup.current && showSetup ) {
+			setSetupStep( 'slide-count' );
+			setPendingSlideCount( 0 );
+		}
+
+		if ( prevShowSetup.current && ! showSetup ) {
+			if ( typeof document !== 'undefined' ) {
+				const iframe = document.querySelector< HTMLIFrameElement >( 'iframe[name="editor-canvas"]' );
+				const blockNode =
+					iframe?.contentDocument?.getElementById( `block-${ clientId }` ) ??
+					document.getElementById( `block-${ clientId }` );
+				blockNode?.focus();
+			}
+		}
+		prevShowSetup.current = showSetup;
+	}, [ showSetup, clientId ] );
+
+	// After navigating back from template step, restore focus to first slide-count button.
+	useEffect( () => {
+		if ( ! showSetup || setupStep !== 'slide-count' || ! shouldRestoreSlideCountFocus.current ) {
+			return;
+		}
+
+		const rafId = requestAnimationFrame( () => {
+			const firstBtn = slideCountOptionsRef.current?.querySelector< HTMLButtonElement >(
+				'button',
+			);
+			firstBtn?.focus();
+			shouldRestoreSlideCountFocus.current = false;
+		} );
+
+		return () => cancelAnimationFrame( rafId );
+	}, [ showSetup, setupStep ] );
 
 	// Fetch registered block types for the allowed-blocks token field
 	const blockTypes = useSelect( ( select ) => {
@@ -197,16 +246,35 @@ export default function Edit( {
 			],
 		);
 
-	const handleSetup = ( slideCount: number ) => {
-		const slides = Array.from( { length: slideCount }, () =>
-			createBlock( 'rt-carousel/carousel-slide', {}, [
-				createBlock( 'core/paragraph', {} ),
-			] ),
-		);
+	/**
+	 * Handle the initial setup of the carousel block
+	 *
+	 * @param {number} count - The number of slides selected by the user.
+	 */
+	const handleSlideCountPicked = ( count: number ) => {
+		setPendingSlideCount( count );
+		setSetupStep( 'template' );
+	};
+
+	/**
+	 * Handle the selection of a slide template during setup.
+	 *
+	 * @param {SlideTemplate} template - The slide template selected by the user.
+	 */
+	const handleTemplateSelected = ( template: SlideTemplate ) => {
+		// Query Loop goes directly inside the viewport; regular templates get slide wrappers.
+		const viewportChildren = template.isQueryLoop
+			? [ createBlock( 'core/query', {}, [] ) ]
+			: Array.from( { length: Math.max( pendingSlideCount, 1 ) }, () =>
+				createBlock( 'rt-carousel/carousel-slide', {}, template.innerBlocks() ),
+			);
 
 		replaceInnerBlocks(
 			clientId,
-			[ createBlock( 'rt-carousel/carousel-viewport', {}, slides ), createNavGroup() ],
+			[
+				createBlock( 'rt-carousel/carousel-viewport', {}, viewportChildren ),
+				createNavGroup(),
+			],
 			false,
 		);
 	};
@@ -435,30 +503,51 @@ export default function Edit( {
 					<Placeholder
 						icon="columns"
 						label={ __( 'Carousel', 'rt-carousel' ) }
-						instructions={ __( 'How many slides would you like to start with?', 'rt-carousel' ) }
+						instructions={
+							setupStep === 'slide-count'
+								? __( 'How many slides would you like to start with?', 'rt-carousel' )
+								: __( 'Choose a slide template:', 'rt-carousel' )
+						}
 						className="rt-carousel-setup"
 					>
-						<div className="rt-carousel-setup__options">
-							{ [ 1, 2, 3, 4 ].map( ( count ) => (
-								<Button
-									key={ count }
-									variant="secondary"
-									className="rt-carousel-setup__option"
-									onClick={ () => handleSetup( count ) }
+						{ setupStep === 'slide-count' && (
+							<>
+								<div
+									className="rt-carousel-setup__options"
+									ref={ slideCountOptionsRef }
 								>
-									{ count === 1
-										? __( '1 Slide', 'rt-carousel' )
-										: `${ count } ${ __( 'Slides', 'rt-carousel' ) }` }
+									{ [ 1, 2, 3, 4 ].map( ( count ) => (
+										<Button
+											key={ count }
+											variant="secondary"
+											className="rt-carousel-setup__option"
+											onClick={ () => handleSlideCountPicked( count ) }
+										>
+											{ count === 1
+												? __( '1 Slide', 'rt-carousel' )
+												: `${ count } ${ __( 'Slides', 'rt-carousel' ) }` }
+										</Button>
+									) ) }
+								</div>
+								<Button
+									variant="link"
+									className="rt-carousel-setup__skip"
+									onClick={ handleSkip }
+								>
+									{ __( 'Skip', 'rt-carousel' ) }
 								</Button>
-							) ) }
-						</div>
-						<Button
-							variant="link"
-							className="rt-carousel-setup__skip"
-							onClick={ handleSkip }
-						>
-							{ __( 'Skip', 'rt-carousel' ) }
-						</Button>
+							</>
+						) }
+						{ setupStep === 'template' && (
+							<TemplatePicker
+								templates={ slideTemplates }
+								onSelect={ handleTemplateSelected }
+								onBack={ () => {
+									shouldRestoreSlideCountFocus.current = true;
+									setSetupStep( 'slide-count' );
+								} }
+							/>
+						) }
 					</Placeholder>
 				</div>
 			</EditorCarouselContext.Provider>
