@@ -32,18 +32,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</div>
 	<!-- /wp:rt-carousel/carousel-viewport -->
 
-	<!-- wp:group {"style":{"spacing":{"margin":{"top":"var:preset|spacing|30","bottom":"0"}}},"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"space-between"}} -->
+	<!-- wp:group {"style":{"spacing":{"margin":{"top":"var:preset|spacing|30","bottom":"0"}}},"layout":{"type":"flex","flexWrap":"nowrap"}} -->
 	<div class="wp-block-group" style="margin-top:var(--wp--preset--spacing--30);margin-bottom:0"><!-- wp:rt-carousel/carousel-controls {"className":"wp-block-carousel-carousel-controls"} -->
 		<div class="wp-block-rt-carousel-carousel-controls rt-carousel-controls wp-block-carousel-carousel-controls"><button type="button" class="rt-carousel-controls__btn rt-carousel-controls__btn--prev" data-wp-on--click="actions.scrollPrev" data-wp-bind--disabled="!state.canScrollPrev" aria-label="Previous Slide"><svg class="rt-carousel-controls__icon" width="13" height="8" viewBox="0 0 13 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M0 3.55371L3.55371 7.10742V4.26562H12.7861V2.84375H3.55371V0L0 3.55371Z" fill="#1C1C1C"></path>
-			</svg></button><button type="button" class="rt-carousel-controls__btn rt-carousel-controls__btn--next" data-wp-on--click="actions.scrollNext" data-wp-bind--disabled="!state.canScrollNext" aria-label="Next Slide"><svg class="rt-carousel-controls__icon" width="13" height="8" viewBox="0 0 13 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M12.7861 3.55371L9.23242 7.10742V4.26562H0V2.84375H9.23242V0L12.7861 3.55371Z" fill="#1C1C1C"></path>
-			</svg></button></div>
+					<path d="M0 3.55371L3.55371 7.10742V4.26562H12.7861V2.84375H3.55371V0L0 3.55371Z" fill="#1C1C1C"></path>
+				</svg></button><button type="button" class="rt-carousel-controls__btn rt-carousel-controls__btn--next" data-wp-on--click="actions.scrollNext" data-wp-bind--disabled="!state.canScrollNext" aria-label="Next Slide"><svg class="rt-carousel-controls__icon" width="13" height="8" viewBox="0 0 13 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M12.7861 3.55371L9.23242 7.10742V4.26562H0V2.84375H9.23242V0L12.7861 3.55371Z" fill="#1C1C1C"></path>
+				</svg></button></div>
 		<!-- /wp:rt-carousel/carousel-controls -->
-
-		<!-- wp:rt-carousel/carousel-dots {"className":"wp-block-carousel-carousel-dots"} -->
-		<div class="wp-block-rt-carousel-carousel-dots rt-carousel-dots wp-block-carousel-carousel-dots"><template data-wp-each--snap="context.scrollSnaps"><button class="rt-carousel-dot" data-wp-class--is-active="callbacks.isDotActive" data-wp-bind--aria-current="callbacks.isDotActive" data-wp-on--click="actions.onDotClick" data-wp-bind--aria-label="callbacks.getDotLabel" type="button"></button></template></div>
-		<!-- /wp:rt-carousel/carousel-dots -->
 	</div>
 	<!-- /wp:group -->
 </div>

@@ -9,6 +9,7 @@ import {
 	DYNAMIC_LIST_CONTAINER_SELECTOR,
 	CAROUSEL_SLIDE_SELECTOR,
 } from './dynamic-list-selectors';
+import { normalizeContainScroll } from './embla-options';
 
 type ElementWithRef = {
 	ref?: HTMLElement | null;
@@ -230,27 +231,12 @@ store( 'rt-carousel/carousel', {
 
 				const startEmbla = () => {
 					const rawOptions: EmblaOptionsType = context.options || {};
-					const rawContainScroll = ( context.options as { containScroll?: unknown } )?.containScroll;
 
 					const align = [ 'start', 'center', 'end' ].includes(
 						rawOptions.align as string,
 					)
 						? ( rawOptions.align as 'start' | 'center' | 'end' )
 						: 'start';
-
-					let containScroll: EmblaOptionsType['containScroll'] =
-						'trimSnaps';
-					if (
-						[ 'trimSnaps', 'keepSnaps' ].includes(
-							rawContainScroll as string,
-						)
-					) {
-						containScroll = rawContainScroll as 'trimSnaps' | 'keepSnaps';
-					} else if ( rawContainScroll === '' ) {
-						// Block/editor serialization can provide an empty string for a disabled
-						// setting; normalize that to Embla's boolean `false` value.
-						containScroll = false;
-					}
 
 					const direction = [ 'ltr', 'rtl' ].includes(
 						rawOptions.direction as string,
@@ -271,7 +257,7 @@ store( 'rt-carousel/carousel', {
 					const options: EmblaOptionsType = {
 						...rawOptions,
 						align,
-						containScroll,
+						containScroll: normalizeContainScroll( rawOptions.containScroll ),
 						direction,
 						slidesToScroll,
 						container: dynamicListContainer || null,

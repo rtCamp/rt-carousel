@@ -96,6 +96,7 @@ export default function Edit( {
 	const prevShowSetup = useRef( showSetup );
 	const slideCountOptionsRef = useRef< HTMLDivElement >( null );
 	const shouldRestoreSlideCountFocus = useRef( false );
+	const shouldFocusEmptyViewport = useRef( false );
 
 	// Reset the setup flow when the placeholder reopens after all inner blocks are removed.
 	// When setup completes, focus the carousel block so focus stays in the canvas.
@@ -112,7 +113,17 @@ export default function Edit( {
 				const blockNode =
 					iframe?.contentDocument?.getElementById( `block-${ clientId }` ) ??
 					document.getElementById( `block-${ clientId }` );
-				blockNode?.focus();
+
+				if ( shouldFocusEmptyViewport.current ) {
+					blockNode
+						?.querySelector< HTMLElement >(
+							'[data-rt-carousel-empty-appender="true"]',
+						)
+						?.focus();
+					shouldFocusEmptyViewport.current = false;
+				} else {
+					blockNode?.focus();
+				}
 			}
 		}
 		prevShowSetup.current = showSetup;
@@ -283,6 +294,7 @@ export default function Edit( {
 	 * Skip — still creates the correct structure, just without slides.
 	 */
 	const handleSkip = () => {
+		shouldFocusEmptyViewport.current = true;
 		replaceInnerBlocks(
 			clientId,
 			[ createBlock( 'rt-carousel/carousel-viewport', {} ), createNavGroup() ],

@@ -68,9 +68,15 @@ Yes! rtCarousel is fully compatible with Full Site Editing. You can use the caro
 
 Absolutely. Each slide is a container that accepts any WordPress block—images, paragraphs, groups, columns, and even other third-party blocks.
 
+### How do I add content to an empty Carousel Viewport?
+
+Use **Add Slide** for static/manual slides, **Add Query Loop** for dynamic post slides, or **Add Terms Query** for dynamic taxonomy term slides.
+
 ### Does it support the Query Loop and Terms Query blocks?
 
 Yes. Add a Query Loop or Terms Query block inside the Carousel Viewport, and each post or term becomes a slide automatically. You can also start from the bundled Query Loop Carousel or Terms Query Carousel patterns.
+
+Do not place Query Loop or Terms Query inside a Carousel Slide block. Their generated posts or terms are used as the carousel slides automatically; Carousel Slide is intended for static or manually created slide content.
 
 ### Is it accessible?
 

@@ -4,6 +4,8 @@
  * @package
  */
 
+import '@testing-library/jest-dom';
+import type { ReactNode } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Edit from '../edit';
 import type { CarouselAttributes } from '../types';
@@ -19,15 +21,22 @@ jest.mock( '@wordpress/block-editor', () => ( {
 } ) );
 
 jest.mock( '@wordpress/components', () => {
-	const React = jest.requireActual( 'react' );
-
-	const Button = ( { children, onClick, className, ...rest }: any ) => (
+	const Button = ( {
+		children,
+		onClick,
+		className,
+		...rest
+	}: {
+		children?: ReactNode;
+		onClick?: () => void;
+		className?: string;
+	} ) => (
 		<button type="button" className={ className } onClick={ onClick } { ...rest }>
 			{ children }
 		</button>
 	);
 
-	const Passthrough = ( { children }: any ) => <>{ children }</>;
+	const Passthrough = ( { children }: { children?: ReactNode } ) => <>{ children }</>;
 
 	return {
 		PanelBody: Passthrough,
@@ -37,7 +46,15 @@ jest.mock( '@wordpress/components', () => {
 		BaseControl: Passthrough,
 		TextControl: jest.fn( () => null ),
 		RangeControl: jest.fn( () => null ),
-		Placeholder: ( { children, instructions, className }: any ) => (
+		Placeholder: ( {
+			children,
+			instructions,
+			className,
+		}: {
+			children?: ReactNode;
+			instructions?: string;
+			className?: string;
+		} ) => (
 			<div className={ className }>
 				<p>{ instructions }</p>
 				{ children }
@@ -53,7 +70,7 @@ jest.mock( '@wordpress/data', () => ( {
 		replaceInnerBlocks: jest.fn(),
 		insertBlock: jest.fn(),
 	} ) ),
-	useSelect: jest.fn( ( selector: any ) =>
+	useSelect: jest.fn( ( selector: ( select: ( storeName: string ) => unknown ) => unknown ) =>
 		selector( ( storeName: string ) => {
 			if ( storeName === 'core/block-editor' ) {
 				return {
