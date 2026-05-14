@@ -13,6 +13,7 @@
  */
 
 import { store, getContext, getElement } from '@wordpress/interactivity';
+import '@testing-library/jest-dom';
 
 import EmblaCarousel, { type EmblaCarouselType } from 'embla-carousel';
 
@@ -90,6 +91,24 @@ const createMockCarouselDOM = () => {
 	return { wrapper, viewport, button };
 };
 
+const createMockThumbnailsDOM = () => {
+	const { wrapper, viewport } = createMockCarouselDOM();
+	const thumbnails = document.createElement( 'div' );
+	thumbnails.className = 'rt-carousel-thumbnails';
+
+	const thumbnailsViewport = document.createElement( 'div' );
+	thumbnailsViewport.className = 'rt-carousel-thumbnails__viewport';
+
+	const thumbnailsContainer = document.createElement( 'div' );
+	thumbnailsContainer.className = 'rt-carousel-thumbnails__container';
+
+	thumbnailsViewport.appendChild( thumbnailsContainer );
+	thumbnails.appendChild( thumbnailsViewport );
+	wrapper.appendChild( thumbnails );
+
+	return { wrapper, viewport, thumbnails, thumbnailsContainer };
+};
+
 /**
  * Helper to create mock Embla instance with all required methods.
  *
@@ -103,10 +122,13 @@ const createMockEmblaInstance = ( overrides = {} ) => ( {
 	on: jest.fn(),
 	off: jest.fn(),
 	destroy: jest.fn(),
+	reInit: jest.fn(),
 	canScrollPrev: jest.fn( () => true ),
 	canScrollNext: jest.fn( () => true ),
 	selectedScrollSnap: jest.fn( () => 0 ),
 	scrollSnapList: jest.fn( () => [ 0, 0.5, 1 ] ),
+	slideNodes: jest.fn( () => [] ),
+	scrollProgress: jest.fn( () => 0 ),
 	...overrides,
 } );
 
@@ -756,6 +778,294 @@ describe( 'Carousel View Module', () => {
 					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
 						originalIntersectionObserver;
 				}
+			} );
+		} );
+
+		describe( 'initThumbnails', () => {
+			it( 'should be defined as a function', () => {
+				expect( storeConfig?.callbacks?.initThumbnails ).toBeDefined();
+				expect( typeof storeConfig?.callbacks?.initThumbnails ).toBe( 'function' );
+			} );
+
+			it( 'should wait for the main carousel ready event before building thumbnails', () => {
+				const { wrapper, viewport, thumbnails, thumbnailsContainer } =
+					createMockThumbnailsDOM();
+				const slide = document.createElement( 'div' );
+				slide.className = 'embla__slide';
+				slide.textContent = 'Slide content';
+				const mainEmbla = createMockEmblaInstance( {
+					scrollSnapList: jest.fn( () => [ 0 ] ),
+					slideNodes: jest.fn( () => [ slide ] ),
+				} );
+				const thumbEmbla = createMockEmblaInstance();
+
+				( getContext as jest.Mock ).mockReturnValue( createMockContext() );
+				( getElement as jest.Mock ).mockReturnValue( { ref: thumbnails } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( thumbEmbla );
+
+				const cleanup = storeConfig.callbacks.initThumbnails();
+
+				expect( thumbnailsContainer.children ).toHaveLength( 0 );
+
+				setEmblaOnViewport( viewport, mainEmbla );
+				wrapper.dispatchEvent(
+					new CustomEvent( 'rt-carousel:init', { detail: { embla: mainEmbla } } ),
+				);
+
+				expect( thumbnailsContainer.querySelectorAll( 'button' ) ).toHaveLength( 1 );
+
+				cleanup?.();
+			} );
+
+			it( 'should generate thumbnail buttons from slide nodes', () => {
+				const { viewport, thumbnails, thumbnailsContainer } =
+					createMockThumbnailsDOM();
+				const slides = [ 1, 2, 3 ].map( ( index ) => {
+					const slide = document.createElement( 'div' );
+					slide.className = 'embla__slide';
+					slide.innerHTML = `<p id="slide-${ index }" data-wp-text="bad">Slide ${ index }</p>`;
+					return slide;
+				} );
+				const mainEmbla = createMockEmblaInstance( {
+					scrollSnapList: jest.fn( () => [ 0, 0.5, 1 ] ),
+					slideNodes: jest.fn( () => slides ),
+				} );
+				const thumbEmbla = createMockEmblaInstance();
+
+				setEmblaOnViewport( viewport, mainEmbla );
+				( getContext as jest.Mock ).mockReturnValue( createMockContext() );
+				( getElement as jest.Mock ).mockReturnValue( { ref: thumbnails } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( thumbEmbla );
+
+				const cleanup = storeConfig.callbacks.initThumbnails();
+				const buttons = thumbnailsContainer.querySelectorAll( 'button' );
+
+				expect( buttons ).toHaveLength( 3 );
+				expect( thumbnailsContainer.querySelector( '[data-wp-text]' ) ).toBeNull();
+				expect( thumbnailsContainer.querySelector( '#slide-1' ) ).toBeNull();
+
+				cleanup?.();
+			} );
+
+			it( 'should render slide images as full thumbnail images', () => {
+				const { viewport, thumbnails, thumbnailsContainer } =
+					createMockThumbnailsDOM();
+				const slide = document.createElement( 'div' );
+				slide.className = 'embla__slide';
+				slide.innerHTML = '<figure><img src="https://example.com/image.jpg" alt="Money" /></figure>';
+				const mainEmbla = createMockEmblaInstance( {
+					scrollSnapList: jest.fn( () => [ 0 ] ),
+					slideNodes: jest.fn( () => [ slide ] ),
+				} );
+				const thumbEmbla = createMockEmblaInstance();
+
+				setEmblaOnViewport( viewport, mainEmbla );
+				( getContext as jest.Mock ).mockReturnValue( createMockContext() );
+				( getElement as jest.Mock ).mockReturnValue( { ref: thumbnails } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( thumbEmbla );
+
+				const cleanup = storeConfig.callbacks.initThumbnails();
+				const thumbnailImage = thumbnailsContainer.querySelector(
+					'.rt-carousel-thumbnail__image',
+				);
+
+				expect( thumbnailImage ).toBeInstanceOf( HTMLImageElement );
+				expect( thumbnailImage ).toHaveAttribute(
+					'src',
+					'https://example.com/image.jpg',
+				);
+				expect( thumbnailImage ).toHaveAttribute( 'alt', '' );
+
+				cleanup?.();
+			} );
+
+			it( 'should use translated carousel label pattern for thumbnail labels', () => {
+				const { viewport, thumbnails, thumbnailsContainer } =
+					createMockThumbnailsDOM();
+				const mainEmbla = createMockEmblaInstance( {
+					scrollSnapList: jest.fn( () => [ 0 ] ),
+					slideNodes: jest.fn( () => [ document.createElement( 'div' ) ] ),
+				} );
+				const thumbEmbla = createMockEmblaInstance();
+
+				setEmblaOnViewport( viewport, mainEmbla );
+				( getContext as jest.Mock ).mockReturnValue(
+					createMockContext( { ariaLabelPattern: 'View item %d' } ),
+				);
+				( getElement as jest.Mock ).mockReturnValue( { ref: thumbnails } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( thumbEmbla );
+
+				const cleanup = storeConfig.callbacks.initThumbnails();
+
+				expect( thumbnailsContainer.querySelector( 'button' ) ).toHaveAttribute(
+					'aria-label',
+					'View item 1',
+				);
+
+				cleanup?.();
+			} );
+
+			it( 'should preview the first slide for each grouped scroll snap', () => {
+				const { viewport, thumbnails, thumbnailsContainer } =
+					createMockThumbnailsDOM();
+				const slides = [ 1, 2, 3, 4 ].map( ( index ) => {
+					const slide = document.createElement( 'div' );
+					slide.innerHTML = `<img src="https://example.com/slide-${ index }.jpg" alt="" />`;
+					return slide;
+				} );
+				const mainEmbla = createMockEmblaInstance( {
+					scrollSnapList: jest.fn( () => [ 0, 1 ] ),
+					slideNodes: jest.fn( () => slides ),
+				} );
+				const thumbEmbla = createMockEmblaInstance();
+
+				setEmblaOnViewport( viewport, mainEmbla );
+				( getContext as jest.Mock ).mockReturnValue( createMockContext() );
+				( getElement as jest.Mock ).mockReturnValue( { ref: thumbnails } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( thumbEmbla );
+
+				const cleanup = storeConfig.callbacks.initThumbnails();
+				const images = thumbnailsContainer.querySelectorAll(
+					'.rt-carousel-thumbnail__image',
+				);
+
+				expect( images.item( 0 ) ).toHaveAttribute(
+					'src',
+					'https://example.com/slide-1.jpg',
+				);
+				expect( images.item( 1 ) ).toHaveAttribute(
+					'src',
+					'https://example.com/slide-3.jpg',
+				);
+
+				cleanup?.();
+			} );
+
+			it( 'should scroll the main carousel when a thumbnail is clicked', () => {
+				const { viewport, thumbnails, thumbnailsContainer } =
+					createMockThumbnailsDOM();
+				const slides = [ 1, 2 ].map( () => document.createElement( 'div' ) );
+				const mainEmbla = createMockEmblaInstance( {
+					selectedScrollSnap: jest.fn( () => 0 ),
+					scrollSnapList: jest.fn( () => [ 0, 1 ] ),
+					slideNodes: jest.fn( () => slides ),
+				} );
+				const thumbEmbla = createMockEmblaInstance();
+
+				setEmblaOnViewport( viewport, mainEmbla );
+				( getContext as jest.Mock ).mockReturnValue( createMockContext() );
+				( getElement as jest.Mock ).mockReturnValue( { ref: thumbnails } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( thumbEmbla );
+
+				const cleanup = storeConfig.callbacks.initThumbnails();
+				const secondButton = thumbnailsContainer.querySelectorAll( 'button' ).item( 1 );
+
+				secondButton.dispatchEvent( new MouseEvent( 'click', { bubbles: true } ) );
+
+				expect( mainEmbla.scrollTo ).toHaveBeenCalledWith( 1 );
+
+				cleanup?.();
+			} );
+
+			it( 'should still scroll when announcement context is unavailable during thumbnail click', () => {
+				const { viewport, thumbnails, thumbnailsContainer } =
+					createMockThumbnailsDOM();
+				const slides = [ 1, 2 ].map( () => document.createElement( 'div' ) );
+				const mainEmbla = createMockEmblaInstance( {
+					selectedScrollSnap: jest.fn( () => 0 ),
+					scrollSnapList: jest.fn( () => [ 0, 1 ] ),
+					slideNodes: jest.fn( () => slides ),
+				} );
+				const thumbEmbla = createMockEmblaInstance();
+
+				setEmblaOnViewport( viewport, mainEmbla );
+				( getContext as jest.Mock ).mockReturnValue( createMockContext() );
+				( getElement as jest.Mock ).mockReturnValue( { ref: thumbnails } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( thumbEmbla );
+
+				const cleanup = storeConfig.callbacks.initThumbnails();
+				( getContext as jest.Mock ).mockImplementation( () => {
+					throw new Error( 'No interactivity scope' );
+				} );
+
+				thumbnailsContainer
+					.querySelectorAll( 'button' )
+					.item( 1 )
+					.dispatchEvent( new MouseEvent( 'click', { bubbles: true } ) );
+
+				expect( mainEmbla.scrollTo ).toHaveBeenCalledWith( 1 );
+
+				cleanup?.();
+			} );
+
+			it( 'should update active thumbnail state on select', () => {
+				const { viewport, thumbnails, thumbnailsContainer } =
+					createMockThumbnailsDOM();
+				const listeners: { select?: () => void } = {};
+				const selectedScrollSnap = jest
+					.fn()
+					.mockReturnValueOnce( 0 )
+					.mockReturnValueOnce( 0 )
+					.mockReturnValue( 1 );
+				const mainEmbla = createMockEmblaInstance( {
+					selectedScrollSnap,
+					scrollSnapList: jest.fn( () => [ 0, 1 ] ),
+					slideNodes: jest.fn( () => [
+						document.createElement( 'div' ),
+						document.createElement( 'div' ),
+					] ),
+				} );
+				mainEmbla.on = jest.fn( ( eventName: string, callback: () => void ) => {
+					if ( eventName === 'select' ) {
+						listeners.select = callback;
+					}
+					return mainEmbla;
+				} );
+				const thumbEmbla = createMockEmblaInstance();
+
+				setEmblaOnViewport( viewport, mainEmbla );
+				( getContext as jest.Mock ).mockReturnValue( createMockContext() );
+				( getElement as jest.Mock ).mockReturnValue( { ref: thumbnails } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( thumbEmbla );
+
+				const cleanup = storeConfig.callbacks.initThumbnails();
+				listeners.select?.();
+
+				const buttons = thumbnailsContainer.querySelectorAll( 'button' );
+				const firstButton = buttons.item( 0 );
+				const secondButton = buttons.item( 1 );
+				expect( firstButton ).not.toHaveClass( 'is-active' );
+				expect( firstButton ).not.toHaveAttribute( 'aria-current' );
+				expect( secondButton ).toHaveClass( 'is-active' );
+				expect( secondButton ).toHaveAttribute( 'aria-current', 'true' );
+				expect( thumbEmbla.scrollTo ).toHaveBeenCalledWith( 1 );
+
+				cleanup?.();
+			} );
+
+			it( 'should destroy thumbnail Embla and remove listeners on cleanup', () => {
+				const { viewport, thumbnails, thumbnailsContainer } =
+					createMockThumbnailsDOM();
+				const mainEmbla = createMockEmblaInstance( {
+					scrollSnapList: jest.fn( () => [ 0 ] ),
+					slideNodes: jest.fn( () => [ document.createElement( 'div' ) ] ),
+				} );
+				const thumbEmbla = createMockEmblaInstance();
+
+				setEmblaOnViewport( viewport, mainEmbla );
+				( getContext as jest.Mock ).mockReturnValue( createMockContext() );
+				( getElement as jest.Mock ).mockReturnValue( { ref: thumbnails } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( thumbEmbla );
+
+				const cleanup = storeConfig.callbacks.initThumbnails();
+				expect( thumbnailsContainer.children ).toHaveLength( 1 );
+
+				cleanup?.();
+
+				expect( mainEmbla.off ).toHaveBeenCalledWith( 'select', expect.any( Function ) );
+				expect( mainEmbla.off ).toHaveBeenCalledWith( 'reInit', expect.any( Function ) );
+				expect( thumbEmbla.destroy ).toHaveBeenCalledTimes( 1 );
+				expect( thumbnailsContainer.children ).toHaveLength( 0 );
 			} );
 		} );
 	} );

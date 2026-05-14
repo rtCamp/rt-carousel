@@ -132,6 +132,7 @@ class Plugin {
 			'carousel/controls',
 			'carousel/dots',
 			'carousel/progress',
+			'carousel/thumbnails',
 			'carousel/viewport',
 			'carousel/slide',
 		];

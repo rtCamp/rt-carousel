@@ -5,8 +5,10 @@
  */
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import Edit from '../edit';
 import type { CarouselAttributes } from '../types';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 let mockBlockCount = 0;
 
@@ -19,15 +21,24 @@ jest.mock( '@wordpress/block-editor', () => ( {
 } ) );
 
 jest.mock( '@wordpress/components', () => {
-	const React = jest.requireActual( 'react' );
+	type MockButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+		children?: ReactNode;
+	};
+	type MockChildrenProps = {
+		children?: ReactNode;
+	};
+	type MockPlaceholderProps = MockChildrenProps & {
+		instructions?: ReactNode;
+		className?: string;
+	};
 
-	const Button = ( { children, onClick, className, ...rest }: any ) => (
+	const Button = ( { children, onClick, className, ...rest }: MockButtonProps ) => (
 		<button type="button" className={ className } onClick={ onClick } { ...rest }>
 			{ children }
 		</button>
 	);
 
-	const Passthrough = ( { children }: any ) => <>{ children }</>;
+	const Passthrough = ( { children }: MockChildrenProps ) => <>{ children }</>;
 
 	return {
 		PanelBody: Passthrough,
@@ -37,7 +48,7 @@ jest.mock( '@wordpress/components', () => {
 		BaseControl: Passthrough,
 		TextControl: jest.fn( () => null ),
 		RangeControl: jest.fn( () => null ),
-		Placeholder: ( { children, instructions, className }: any ) => (
+		Placeholder: ( { children, instructions, className }: MockPlaceholderProps ) => (
 			<div className={ className }>
 				<p>{ instructions }</p>
 				{ children }
@@ -53,7 +64,7 @@ jest.mock( '@wordpress/data', () => ( {
 		replaceInnerBlocks: jest.fn(),
 		insertBlock: jest.fn(),
 	} ) ),
-	useSelect: jest.fn( ( selector: any ) =>
+	useSelect: jest.fn( ( selector: ( select: ( storeName: string ) => unknown ) => unknown ) =>
 		selector( ( storeName: string ) => {
 			if ( storeName === 'core/block-editor' ) {
 				return {
