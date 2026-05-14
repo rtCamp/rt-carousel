@@ -18,6 +18,8 @@ type EmblaViewportElement = HTMLElement & {
 
 export const emblaInstances = new WeakMap<HTMLElement, EmblaCarouselType>();
 
+const CAROUSEL_READY_EVENT = 'rt-carousel:init';
+
 const getElementRef = ( rawElement: unknown ): HTMLElement | null => {
 	if ( rawElement instanceof HTMLElement ) {
 		return rawElement;
@@ -43,6 +45,38 @@ const getEmblaFromElement = (
 		return null;
 	}
 	return emblaInstances.get( viewport ) || viewport[ EMBLA_KEY ] || null;
+};
+
+const getCarouselRoot = ( element: HTMLElement | null ): HTMLElement | null => {
+	return element?.closest( '.rt-carousel' ) ?? null;
+};
+
+const getMainViewport = (
+	wrapper: HTMLElement | null,
+): EmblaViewportElement | null => {
+	return wrapper?.querySelector( '.embla' ) as EmblaViewportElement | null;
+};
+
+const getMainEmblaFromRoot = (
+	wrapper: HTMLElement | null,
+): EmblaCarouselType | null => {
+	const viewport = getMainViewport( wrapper );
+	if ( ! viewport ) {
+		return null;
+	}
+	return emblaInstances.get( viewport ) || viewport[ EMBLA_KEY ] || null;
+};
+
+const dispatchCarouselReady = (
+	wrapper: HTMLElement,
+	embla: EmblaCarouselType,
+): void => {
+	wrapper.dispatchEvent(
+		new CustomEvent( CAROUSEL_READY_EVENT, {
+			bubbles: true,
+			detail: { embla },
+		} ),
+	);
 };
 
 const getProgress = (): number => {
@@ -90,6 +124,155 @@ const updateSlideAnnouncement = (
 
 const markForAnnouncement = (): void => {
 	getContext<CarouselContext>().shouldAnnounce = true;
+};
+
+const safelyMarkForAnnouncement = (): void => {
+	try {
+		markForAnnouncement();
+	} catch {
+		// Native event listeners do not always run inside an Interactivity API
+		// scope. Navigation should still happen if announcement state is unavailable.
+	}
+};
+
+const stripInteractiveAttributes = ( element: Element ): void => {
+	Array.from( element.attributes ).forEach( ( attribute ) => {
+		if (
+			attribute.name === 'id' ||
+			attribute.name === 'aria-current' ||
+			attribute.name.startsWith( 'data-wp-' ) ||
+			attribute.name.startsWith( 'on' )
+		) {
+			element.removeAttribute( attribute.name );
+		}
+	} );
+
+	if ( element instanceof HTMLElement ) {
+		element.removeAttribute( 'tabindex' );
+		element.removeAttribute( 'contenteditable' );
+		element.setAttribute( 'aria-hidden', 'true' );
+	}
+
+	if (
+		element instanceof HTMLButtonElement ||
+		element instanceof HTMLInputElement ||
+		element instanceof HTMLSelectElement ||
+		element instanceof HTMLTextAreaElement
+	) {
+		element.disabled = true;
+	}
+};
+
+const createThumbnailPreview = ( slide: HTMLElement ): HTMLElement => {
+	const preview = document.createElement( 'span' );
+	preview.className = 'rt-carousel-thumbnail__preview';
+	preview.setAttribute( 'aria-hidden', 'true' );
+
+	const sourceImage = slide.querySelector<HTMLImageElement>( 'img' );
+	if ( sourceImage ) {
+		const image = document.createElement( 'img' );
+		image.className = 'rt-carousel-thumbnail__image';
+		image.src = sourceImage.currentSrc || sourceImage.src;
+		image.alt = '';
+		image.decoding = 'async';
+		image.loading = 'lazy';
+
+		const srcset = sourceImage.getAttribute( 'srcset' );
+		const sizes = sourceImage.getAttribute( 'sizes' );
+		if ( srcset ) {
+			image.setAttribute( 'srcset', srcset );
+		}
+		if ( sizes ) {
+			image.setAttribute( 'sizes', sizes );
+		}
+
+		preview.appendChild( image );
+		return preview;
+	}
+
+	const clone = slide.cloneNode( true ) as HTMLElement;
+	[ clone, ...Array.from( clone.querySelectorAll( '*' ) ) ].forEach(
+		stripInteractiveAttributes,
+	);
+	clone.classList.remove( 'is-active' );
+	preview.appendChild( clone );
+
+	return preview;
+};
+
+const getSlideForSnap = (
+	slides: HTMLElement[],
+	snapIndex: number,
+	snapCount: number,
+): HTMLElement | undefined => {
+	if ( slides.length === 0 || snapCount <= 0 ) {
+		return undefined;
+	}
+
+	const estimatedGroupSize = Math.max( 1, Math.ceil( slides.length / snapCount ) );
+	const slideIndex = Math.min(
+		snapIndex * estimatedGroupSize,
+		slides.length - 1,
+	);
+	return slides[ slideIndex ];
+};
+
+const buildThumbnailButtons = (
+	mainEmbla: EmblaCarouselType,
+	container: HTMLElement,
+	selectedIndex: number,
+	ariaLabelPattern: string,
+	onClick: ( index: number ) => void,
+): HTMLButtonElement[] => {
+	const slides = mainEmbla.slideNodes();
+	const snaps = mainEmbla.scrollSnapList();
+
+	container.replaceChildren();
+
+	return snaps.map( ( _snap, index ) => {
+		const slide = getSlideForSnap( slides, index, snaps.length );
+		const button = document.createElement( 'button' );
+		button.className = 'rt-carousel-thumbnail';
+		button.type = 'button';
+		button.setAttribute(
+			'aria-label',
+			ariaLabelPattern.replace( '%d', ( index + 1 ).toString() ),
+		);
+		button.addEventListener( 'click', () => onClick( index ) );
+
+		if ( slide ) {
+			button.appendChild( createThumbnailPreview( slide ) );
+		} else {
+			const fallback = document.createElement( 'span' );
+			fallback.className = 'rt-carousel-thumbnail__fallback';
+			fallback.setAttribute( 'aria-hidden', 'true' );
+			fallback.textContent = ( index + 1 ).toString();
+			button.appendChild( fallback );
+		}
+
+		if ( index === selectedIndex ) {
+			button.classList.add( 'is-active' );
+			button.setAttribute( 'aria-current', 'true' );
+		}
+
+		container.appendChild( button );
+		return button;
+	} );
+};
+
+const updateThumbnailButtons = (
+	buttons: HTMLButtonElement[],
+	selectedIndex: number,
+): void => {
+	buttons.forEach( ( button, index ) => {
+		const isActive = index === selectedIndex;
+		button.classList.toggle( 'is-active', isActive );
+		if ( isActive ) {
+			button.setAttribute( 'aria-current', 'true' );
+		} else {
+			button.removeAttribute( 'aria-current' );
+		}
+	} );
 };
 
 store( 'rt-carousel/carousel', {
@@ -203,6 +386,110 @@ store( 'rt-carousel/carousel', {
 			}
 			return `transform:translate3d(${ getProgress() * 100 }%, 0px, 0px)`;
 		},
+		initThumbnails: () => {
+			try {
+				const context = getContext<CarouselContext>();
+				const element = getElementRef( getElement() );
+
+				if ( ! element || typeof element.querySelector !== 'function' ) {
+					// eslint-disable-next-line no-console
+					console.warn( 'Carousel: Invalid thumbnails element', element );
+					return;
+				}
+
+				const wrapper = getCarouselRoot( element );
+				const viewport = element.querySelector<HTMLElement>(
+					'.rt-carousel-thumbnails__viewport',
+				);
+				const container = element.querySelector<HTMLElement>(
+					'.rt-carousel-thumbnails__container',
+				);
+
+				if ( ! wrapper || ! viewport || ! container ) {
+					// eslint-disable-next-line no-console
+					console.warn( 'Carousel: Thumbnail elements not found' );
+					return;
+				}
+
+				let cleanupThumbnails: ( () => void ) | undefined;
+
+				const setup = ( mainEmbla: EmblaCarouselType ) => {
+					cleanupThumbnails?.();
+
+					let thumbnailButtons: HTMLButtonElement[] = [];
+					const thumbEmbla = EmblaCarousel( viewport, {
+						align: 'start',
+						containScroll: 'keepSnaps',
+						dragFree: true,
+						axis: 'x',
+					} );
+
+					const scrollTo = ( index: number ) => {
+						if ( index !== mainEmbla.selectedScrollSnap() ) {
+							safelyMarkForAnnouncement();
+						}
+						mainEmbla.scrollTo( index );
+					};
+
+					const syncSelected = () => {
+						const selectedIndex = mainEmbla.selectedScrollSnap();
+						updateThumbnailButtons( thumbnailButtons, selectedIndex );
+						thumbEmbla.scrollTo( selectedIndex );
+					};
+
+					const rebuild = () => {
+						thumbnailButtons = buildThumbnailButtons(
+							mainEmbla,
+							container,
+							mainEmbla.selectedScrollSnap(),
+							context.ariaLabelPattern,
+							scrollTo,
+						);
+						thumbEmbla.reInit();
+						syncSelected();
+					};
+
+					mainEmbla.on( 'select', syncSelected );
+					mainEmbla.on( 'reInit', rebuild );
+
+					rebuild();
+
+					cleanupThumbnails = () => {
+						mainEmbla.off( 'select', syncSelected );
+						mainEmbla.off( 'reInit', rebuild );
+						thumbEmbla.destroy();
+						container.replaceChildren();
+					};
+
+					return cleanupThumbnails;
+				};
+
+				const existingEmbla = getMainEmblaFromRoot( wrapper );
+				if ( existingEmbla ) {
+					setup( existingEmbla );
+				}
+
+				const onCarouselReady = ( event: Event ) => {
+					const customEvent = event as CustomEvent<{ embla?: EmblaCarouselType }>;
+					const mainEmbla = customEvent.detail?.embla || getMainEmblaFromRoot( wrapper );
+					if ( mainEmbla ) {
+						setup( mainEmbla );
+					}
+				};
+
+				wrapper.addEventListener( CAROUSEL_READY_EVENT, onCarouselReady );
+
+				return () => {
+					wrapper.removeEventListener( CAROUSEL_READY_EVENT, onCarouselReady );
+					cleanupThumbnails?.();
+				};
+			} catch ( e ) {
+				// eslint-disable-next-line no-console
+				console.error( 'Carousel: Error in initThumbnails', e );
+
+				return null;
+			}
+		},
 		initCarousel: () => {
 			try {
 				const context = getContext<CarouselContext>();
@@ -214,7 +501,7 @@ store( 'rt-carousel/carousel', {
 					return;
 				}
 
-				const viewport = element.querySelector( '.embla' );
+				const viewport = element.querySelector<EmblaViewportElement>( '.embla' );
 
 				if ( ! viewport ) {
 					// eslint-disable-next-line no-console
@@ -222,7 +509,7 @@ store( 'rt-carousel/carousel', {
 					return;
 				}
 
-				const queryLoopContainer = viewport.querySelector(
+				const queryLoopContainer = viewport.querySelector<HTMLElement>(
 					'.wp-block-post-template',
 				);
 
@@ -235,11 +522,19 @@ store( 'rt-carousel/carousel', {
 						? ( rawOptions.align as 'start' | 'center' | 'end' )
 						: 'start';
 
-					const containScroll = [ 'trimSnaps', 'keepSnaps', '' ].includes(
-						rawOptions.containScroll as string,
-					)
-						? ( rawOptions.containScroll as 'trimSnaps' | 'keepSnaps' | '' )
-						: 'trimSnaps';
+					const rawContainScroll = rawOptions.containScroll as
+						| string
+						| boolean
+						| undefined;
+					let containScroll: EmblaOptionsType['containScroll'] = 'trimSnaps';
+					if (
+						rawContainScroll === 'trimSnaps' ||
+						rawContainScroll === 'keepSnaps'
+					) {
+						containScroll = rawContainScroll;
+					} else if ( rawContainScroll === '' ) {
+						containScroll = false;
+					}
 
 					const direction = [ 'ltr', 'rtl' ].includes(
 						rawOptions.direction as string,
@@ -314,6 +609,7 @@ store( 'rt-carousel/carousel', {
 					} );
 
 					updateState();
+					dispatchCarouselReady( element, embla );
 
 					return () => {
 						embla.destroy();
@@ -347,7 +643,7 @@ store( 'rt-carousel/carousel', {
 				if ( 'IntersectionObserver' in window ) {
 					intersectionObserver = new IntersectionObserver(
 						( entries ) => {
-							if ( entries[ 0 ].isIntersecting ) {
+							if ( entries[ 0 ]?.isIntersecting ) {
 								init();
 								intersectionObserver?.disconnect();
 								intersectionObserver = undefined;

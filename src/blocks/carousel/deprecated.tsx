@@ -12,23 +12,23 @@ import type { CarouselAttributes } from './types';
 function SaveV200( {
 	attributes,
 }: {
-	attributes: CarouselAttributes;
+	attributes: Partial<CarouselAttributes>;
 } ) {
 	const {
-		loop,
-		dragFree,
-		carouselAlign,
-		containScroll,
-		direction,
-		autoplay,
-		autoplayDelay,
-		autoplayStopOnInteraction,
-		autoplayStopOnMouseEnter,
-		ariaLabel,
-		slideGap,
-		axis,
-		height,
-		slidesToScroll,
+		loop = false,
+		dragFree = false,
+		carouselAlign = 'start',
+		containScroll = 'trimSnaps',
+		direction = 'ltr',
+		autoplay = false,
+		autoplayDelay = 4000,
+		autoplayStopOnInteraction = true,
+		autoplayStopOnMouseEnter = false,
+		ariaLabel = 'Carousel',
+		slideGap = 0,
+		axis = 'x',
+		height = '300px',
+		slidesToScroll = '1',
 	} = attributes;
 
 	const context = {
@@ -107,7 +107,7 @@ const deprecated = [
 		},
 		supports: {
 			interactivity: true,
-			align: [ 'wide', 'full' ],
+			align: [ 'wide', 'full' ] as const,
 			html: false,
 			color: {
 				text: false,

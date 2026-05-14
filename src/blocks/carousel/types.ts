@@ -27,6 +27,7 @@ export type CarouselSlideAttributes = {
 export type CarouselControlsAttributes = Record<string, never>;
 export type CarouselDotsAttributes = Record<string, never>;
 export type CarouselProgressAttributes = Record<string, never>;
+export type CarouselThumbnailsAttributes = Record<string, never>;
 
 /**
  * Typed subset of the block editor store selectors used in this plugin.

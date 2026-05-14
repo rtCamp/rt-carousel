@@ -1,0 +1,89 @@
+.rt-carousel-thumbnails {
+	--rt-carousel-thumbnail-width: 96px;
+	--rt-carousel-thumbnail-height: 64px;
+	--rt-carousel-thumbnail-gap: 0.5rem;
+	--rt-carousel-thumbnail-radius: 2px;
+	--rt-carousel-thumbnail-border-color: rgb(221, 221, 221);
+	--rt-carousel-thumbnail-active-border-color: rgba(28, 28, 28, 1);
+	--rt-carousel-thumbnail-opacity: 0.65;
+	--rt-carousel-thumbnail-active-opacity: 1;
+
+	margin-top: 0.75rem;
+}
+
+.rt-carousel-thumbnails__viewport {
+	overflow: hidden;
+	width: 100%;
+}
+
+.rt-carousel-thumbnails__container {
+	display: flex;
+	gap: var(--rt-carousel-thumbnail-gap);
+}
+
+.rt-carousel-thumbnail {
+	flex: 0 0 var(--rt-carousel-thumbnail-width);
+	width: var(--rt-carousel-thumbnail-width);
+	height: var(--rt-carousel-thumbnail-height);
+	padding: 0;
+	border: 2px solid var(--rt-carousel-thumbnail-border-color);
+	border-radius: var(--rt-carousel-thumbnail-radius);
+	background: transparent;
+	cursor: pointer;
+	overflow: hidden;
+	opacity: var(--rt-carousel-thumbnail-opacity);
+	transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.rt-carousel-thumbnail.is-active {
+	border-color: var(--rt-carousel-thumbnail-active-border-color);
+	opacity: var(--rt-carousel-thumbnail-active-opacity);
+}
+
+.rt-carousel-thumbnail__preview {
+	display: block;
+	position: relative;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	pointer-events: none;
+	background: rgb(246, 247, 247);
+	color: rgb(28, 28, 28);
+}
+
+.rt-carousel-thumbnail__image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+}
+
+.rt-carousel-thumbnail__preview > *:not(.rt-carousel-thumbnail__image):not(.rt-carousel-thumbnail__fallback):not(.rt-carousel-thumbnail__editor-preview) {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	transform: scale(0.2);
+	transform-origin: top left;
+	inline-size: 500%;
+	block-size: 500%;
+	max-width: none;
+	pointer-events: none;
+}
+
+.rt-carousel-thumbnail__fallback,
+.rt-carousel-thumbnail__editor-preview {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	padding: 0.25rem;
+	box-sizing: border-box;
+	font-size: 0.75rem;
+	line-height: 1.2;
+	text-align: center;
+	overflow: hidden;
+}
