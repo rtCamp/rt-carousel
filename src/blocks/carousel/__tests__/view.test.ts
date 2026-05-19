@@ -24,6 +24,15 @@ type EmblaViewportElement = HTMLElement & {
 	[EMBLA_KEY]?: EmblaCarouselType;
 };
 
+type HooksWindow = Window & {
+	wp?: {
+		hooks?: {
+			applyFilters?: jest.Mock;
+			doAction?: jest.Mock;
+		};
+	};
+};
+
 import type { CarouselContext } from '../types';
 
 // Import view to trigger store registration
@@ -90,6 +99,20 @@ const createMockCarouselDOM = () => {
 	return { wrapper, viewport, button };
 };
 
+const mockVisibleViewport = ( viewport: HTMLElement ) => {
+	viewport.getBoundingClientRect = jest.fn( () => ( {
+		width: 100,
+		height: 0,
+		top: 0,
+		right: 0,
+		bottom: 0,
+		left: 0,
+		x: 0,
+		y: 0,
+		toJSON: () => ( {} ),
+	} ) );
+};
+
 /**
  * Helper to create mock Embla instance with all required methods.
  *
@@ -107,6 +130,8 @@ const createMockEmblaInstance = ( overrides = {} ) => ( {
 	canScrollNext: jest.fn( () => true ),
 	selectedScrollSnap: jest.fn( () => 0 ),
 	scrollSnapList: jest.fn( () => [ 0, 0.5, 1 ] ),
+	scrollProgress: jest.fn( () => 0 ),
+	slideNodes: jest.fn( () => [] ),
 	...overrides,
 } );
 
@@ -798,17 +823,7 @@ describe( 'Carousel View Module', () => {
 					return mockEmbla;
 				} );
 
-				viewport.getBoundingClientRect = jest.fn( () => ( {
-					width: 100,
-					height: 0,
-					top: 0,
-					right: 0,
-					bottom: 0,
-					left: 0,
-					x: 0,
-					y: 0,
-					toJSON: () => ( {} ),
-				} ) );
+				mockVisibleViewport( viewport );
 
 				( getContext as jest.Mock ).mockReturnValue( mockContext );
 				( getElement as jest.Mock ).mockReturnValue( { ref: wrapper } );
@@ -826,6 +841,77 @@ describe( 'Carousel View Module', () => {
 				} finally {
 					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
 						originalIntersectionObserver;
+				}
+			} );
+
+			it( 'should filter Embla options and plugins before initialization and fire init action', () => {
+				const mockContext = createMockContext( {
+					options: { duration: 25 },
+				} );
+				const { wrapper, viewport } = createMockCarouselDOM();
+				const mockEmbla = createMockEmblaInstance();
+				const originalIntersectionObserver = window.IntersectionObserver;
+				const extraPlugin = {
+					name: 'test-plugin',
+					options: {},
+					init: jest.fn(),
+					destroy: jest.fn(),
+				};
+
+				mockVisibleViewport( viewport );
+
+				const applyFilters = jest.fn( ( hookName, value ) => {
+					if ( hookName === 'rtcamp.carouselKit.emblaOptions' ) {
+						return { ...value, duration: 40 };
+					}
+					if ( hookName === 'rtcamp.carouselKit.emblaPlugins' ) {
+						return [ ...value, extraPlugin ];
+					}
+					return value;
+				} );
+				const doAction = jest.fn();
+
+				( window as HooksWindow ).wp = {
+					hooks: {
+						applyFilters,
+						doAction,
+					},
+				};
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+				( getElement as jest.Mock ).mockReturnValue( { ref: wrapper } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( mockEmbla );
+				delete ( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver;
+
+				try {
+					storeConfig.callbacks.initCarousel();
+
+					expect( applyFilters ).toHaveBeenCalledTimes( 2 );
+					expect( applyFilters ).toHaveBeenNthCalledWith(
+						1,
+						'rtcamp.carouselKit.emblaOptions',
+						expect.objectContaining( { duration: 25 } ),
+						expect.objectContaining( { context: mockContext, root: wrapper, viewport } ),
+					);
+					expect( EmblaCarousel ).toHaveBeenCalledWith(
+						viewport,
+						expect.objectContaining( { duration: 40 } ),
+						[ extraPlugin ],
+					);
+					expect( doAction ).toHaveBeenCalledWith(
+						'rtcamp.carouselKit.emblaInit',
+						mockEmbla,
+						expect.objectContaining( {
+							context: mockContext,
+							root: wrapper,
+							viewport,
+							options: expect.objectContaining( { duration: 40 } ),
+							plugins: [ extraPlugin ],
+						} ),
+					);
+				} finally {
+					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
+						originalIntersectionObserver;
+					delete ( window as HooksWindow ).wp;
 				}
 			} );
 		} );
