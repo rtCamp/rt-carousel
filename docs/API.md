@@ -26,7 +26,7 @@ addFilter(
 );
 ```
 
-Both filters receive the carousel context object as the third argument. `rtcamp.carouselKit.emblaPlugins` also receives the filtered options on `options`.
+Both filter callbacks receive the filtered value as their first argument and the filter context object as their second argument. `rtcamp.carouselKit.emblaPlugins` also receives the filtered options on the `options` property of this object.
 
 rtCarousel also exposes an action after Embla has initialized so integrations can call Embla methods or subscribe to Embla events:
 

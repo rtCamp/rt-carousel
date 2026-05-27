@@ -56,7 +56,8 @@ const applyEmblaFilter = <T>(
 		return value;
 	}
 
-	return applyFilters( hookName, value, filterContext ) as T;
+	const result = applyFilters( hookName, value, filterContext );
+	return result !== null && result !== undefined ? ( result as T ) : value;
 };
 
 const doEmblaAction = (
@@ -380,8 +381,11 @@ store( 'rt-carousel/carousel', {
 						plugins,
 						{ ...filterContext, options: filteredOptions },
 					);
+					const safePlugins = Array.isArray( filteredPlugins )
+						? filteredPlugins
+						: plugins;
 
-					const embla = EmblaCarousel( viewport, filteredOptions, filteredPlugins );
+					const embla = EmblaCarousel( viewport, filteredOptions, safePlugins );
 
 					emblaInstances.set( viewport, embla );
 					viewport[ EMBLA_KEY ] = embla;
@@ -425,7 +429,7 @@ store( 'rt-carousel/carousel', {
 						{
 							...filterContext,
 							options: filteredOptions,
-							plugins: filteredPlugins,
+							plugins: safePlugins,
 						},
 					);
 

@@ -914,6 +914,92 @@ describe( 'Carousel View Module', () => {
 					delete ( window as HooksWindow ).wp;
 				}
 			} );
+
+			it( 'should keep original Embla options when the options filter returns undefined', () => {
+				const mockContext = createMockContext( {
+					options: { duration: 25 },
+				} );
+				const { wrapper, viewport } = createMockCarouselDOM();
+				const mockEmbla = createMockEmblaInstance();
+				const originalIntersectionObserver = window.IntersectionObserver;
+				const applyFilters = jest.fn( ( hookName, value ) => {
+					if ( hookName === 'rtcamp.carouselKit.emblaOptions' ) {
+						return undefined;
+					}
+					return value;
+				} );
+
+				mockVisibleViewport( viewport );
+
+				( window as HooksWindow ).wp = {
+					hooks: {
+						applyFilters,
+					},
+				};
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+				( getElement as jest.Mock ).mockReturnValue( { ref: wrapper } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( mockEmbla );
+				delete ( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver;
+
+				try {
+					storeConfig.callbacks.initCarousel();
+
+					expect( EmblaCarousel ).toHaveBeenCalledWith(
+						viewport,
+						expect.objectContaining( { duration: 25 } ),
+						[],
+					);
+				} finally {
+					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
+						originalIntersectionObserver;
+					delete ( window as HooksWindow ).wp;
+				}
+			} );
+
+			it( 'should keep original Embla plugins when the plugins filter returns a non-array value', () => {
+				const mockContext = createMockContext( {
+					autoplay: {
+						delay: 3000,
+						stopOnInteraction: true,
+						stopOnMouseEnter: false,
+					},
+				} );
+				const { wrapper, viewport } = createMockCarouselDOM();
+				const mockEmbla = createMockEmblaInstance();
+				const originalIntersectionObserver = window.IntersectionObserver;
+				const applyFilters = jest.fn( ( hookName, value ) => {
+					if ( hookName === 'rtcamp.carouselKit.emblaPlugins' ) {
+						return 'not-an-array';
+					}
+					return value;
+				} );
+
+				mockVisibleViewport( viewport );
+
+				( window as HooksWindow ).wp = {
+					hooks: {
+						applyFilters,
+					},
+				};
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+				( getElement as jest.Mock ).mockReturnValue( { ref: wrapper } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( mockEmbla );
+				delete ( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver;
+
+				try {
+					storeConfig.callbacks.initCarousel();
+
+					expect( EmblaCarousel ).toHaveBeenCalledWith(
+						viewport,
+						expect.any( Object ),
+						[ expect.objectContaining( { name: 'autoplay' } ) ],
+					);
+				} finally {
+					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
+						originalIntersectionObserver;
+					delete ( window as HooksWindow ).wp;
+				}
+			} );
 		} );
 	} );
 } );
