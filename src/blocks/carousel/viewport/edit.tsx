@@ -15,6 +15,8 @@ import { useMergeRefs } from '@wordpress/compose';
 import { EditorCarouselContext } from '../editor-context';
 import EmblaCarousel, { type EmblaCarouselType } from 'embla-carousel';
 import { useCarouselObservers } from '../hooks/useCarouselObservers';
+import { DYNAMIC_LIST_CONTAINER_SELECTOR } from '../dynamic-list-selectors';
+import { normalizeContainScroll } from '../embla-options';
 
 const EMBLA_KEY = Symbol.for( 'carousel-system.carousel' );
 
@@ -27,13 +29,6 @@ export default function Edit( {
 	const { setEmblaApi, setCanScrollPrev, setCanScrollNext, carouselOptions } = useContext(
 		EditorCarouselContext,
 	);
-
-	const blockProps = useBlockProps( {
-		className: 'embla',
-		style: {
-			height: carouselOptions?.axis === 'y' ? carouselOptions?.height : undefined,
-		},
-	} );
 
 	/**
 	 * Single store subscription for slide count, IDs, and which slide (if any)
@@ -66,6 +61,13 @@ export default function Edit( {
 
 	const hasSlides = slideCount > 0;
 
+	const blockProps = useBlockProps( {
+		className: 'embla',
+		style: {
+			height: carouselOptions?.axis === 'y' ? carouselOptions?.height : undefined,
+		},
+	} );
+
 	const emblaRef = useRef<HTMLDivElement>( null );
 	const emblaApiRef = useRef<EmblaCarouselType | undefined>();
 	const initEmblaRef = useRef<() => void>();
@@ -93,15 +95,48 @@ export default function Edit( {
 		insertBlock( block, undefined, clientId );
 	}, [ insertBlock, clientId ] );
 
+	const addQueryLoop = useCallback( () => {
+		const block = createBlock( 'core/query' );
+		insertBlock( block, undefined, clientId );
+	}, [ insertBlock, clientId ] );
+
+	const addTermsQuery = useCallback( () => {
+		const block = createBlock( 'core/terms-query', {
+			termQuery: {
+				perPage: 10,
+				taxonomy: 'category',
+				order: 'asc',
+				orderBy: 'name',
+				include: [],
+				hideEmpty: false,
+				showNested: false,
+				inherit: false,
+			},
+		} );
+		insertBlock( block, undefined, clientId );
+	}, [ insertBlock, clientId ] );
+
 	const EmptyAppender = useCallback(
 		() => (
-			<div className="rt-carousel-viewport-empty">
-				<Button variant="primary" icon={ plus } onClick={ addSlide }>
-					{ __( 'Add Slide', 'rt-carousel' ) }
-				</Button>
+			<div
+				className="rt-carousel-viewport-empty"
+				data-rt-carousel-empty-appender="true"
+				tabIndex={ -1 }
+			>
+				<div className="rt-carousel-viewport-empty__actions">
+					<Button variant="primary" icon={ plus } onClick={ addSlide }>
+						{ __( 'Add Slide', 'rt-carousel' ) }
+					</Button>
+					<Button variant="secondary" onClick={ addQueryLoop }>
+						{ __( 'Add Query Loop', 'rt-carousel' ) }
+					</Button>
+					<Button variant="secondary" onClick={ addTermsQuery }>
+						{ __( 'Add Terms Query', 'rt-carousel' ) }
+					</Button>
+				</div>
 			</div>
 		),
-		[ addSlide ],
+		[ addSlide, addQueryLoop, addTermsQuery ],
 	);
 
 	const innerBlocksProps = useInnerBlocksProps(
@@ -115,7 +150,7 @@ export default function Edit( {
 		},
 		{
 			orientation: carouselOptions?.axis === 'y' ? 'vertical' : 'horizontal',
-			allowedBlocks: [ 'rt-carousel/carousel-slide', 'core/query' ],
+			allowedBlocks: [ 'rt-carousel/carousel-slide', 'core/query', 'core/terms-query' ],
 			renderAppender: ! hasSlides ? EmptyAppender : undefined,
 		},
 	);
@@ -169,8 +204,8 @@ export default function Edit( {
 				embla.destroy();
 			}
 
-			const queryLoopContainer = viewport.querySelector(
-				'.wp-block-post-template',
+			const dynamicListContainer = viewport.querySelector(
+				DYNAMIC_LIST_CONTAINER_SELECTOR,
 			) as HTMLElement;
 
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,12 +214,12 @@ export default function Edit( {
 			embla = EmblaCarousel( viewport, {
 				loop: options?.loop ?? false,
 				dragFree: options?.dragFree ?? false,
-				containScroll: options?.containScroll || 'trimSnaps',
+				containScroll: normalizeContainScroll( options?.containScroll ),
 				axis: options?.axis || 'x',
 				align: options?.align || 'start',
 				direction: options?.direction || 'ltr',
 				slidesToScroll: options?.slidesToScroll || 1,
-				container: queryLoopContainer || undefined,
+				container: dynamicListContainer || undefined,
 				watchDrag: false, // Clicks in slide gaps must not trigger Embla scroll in the editor.
 				watchSlides: false, // Gutenberg injects block UI nodes into .embla__container; Embla's built-in MutationObserver would call reInit() on those, corrupting slide order and transforms.
 				watchResize: false, // Replaced by a manual debounced ResizeObserver in useCarouselObservers.

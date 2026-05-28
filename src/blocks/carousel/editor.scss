@@ -135,6 +135,13 @@
 	border: 1px dashed var(--rt-carousel-border-dashed);
 	border-radius: 2px;
 	box-sizing: border-box;
+
+	&__actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 8px;
+	}
 }
 
 // Give slides a minimum visual height in the editor so they are

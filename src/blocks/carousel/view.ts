@@ -5,6 +5,11 @@ import EmblaCarousel, {
 } from 'embla-carousel';
 import Autoplay, { type AutoplayOptionsType } from 'embla-carousel-autoplay';
 import type { CarouselContext } from './types';
+import {
+	DYNAMIC_LIST_CONTAINER_SELECTOR,
+	CAROUSEL_SLIDE_SELECTOR,
+} from './dynamic-list-selectors';
+import { normalizeContainScroll } from './embla-options';
 
 type ElementWithRef = {
 	ref?: HTMLElement | null;
@@ -168,9 +173,9 @@ store( 'rt-carousel/carousel', {
 				return false;
 			}
 
-			// Check for either standard slide or Query Loop post
+			// Check for either standard slide or dynamic Query item.
 			const slide = getElementRef( getElement() )?.closest?.(
-				'.embla__slide, .wp-block-post',
+				CAROUSEL_SLIDE_SELECTOR,
 			);
 
 			if ( ! slide || ! slide.parentElement ) {
@@ -178,9 +183,7 @@ store( 'rt-carousel/carousel', {
 			}
 
 			const slides = Array.from( slide.parentElement.children ).filter(
-				( child: Element ) =>
-					child.classList?.contains( 'embla__slide' ) ||
-					child.classList?.contains( 'wp-block-post' ),
+				( child: Element ) => child.matches( CAROUSEL_SLIDE_SELECTOR ),
 			);
 
 			const index = slides.indexOf( slide );
@@ -239,7 +242,7 @@ store( 'rt-carousel/carousel', {
 					return;
 				}
 
-				const viewport = element.querySelector( '.embla' );
+				const viewport = element.querySelector<EmblaViewportElement>( '.embla' );
 
 				if ( ! viewport ) {
 					// eslint-disable-next-line no-console
@@ -247,8 +250,8 @@ store( 'rt-carousel/carousel', {
 					return;
 				}
 
-				const queryLoopContainer = viewport.querySelector(
-					'.wp-block-post-template',
+				const dynamicListContainer = viewport.querySelector<HTMLElement>(
+					DYNAMIC_LIST_CONTAINER_SELECTOR,
 				);
 
 				const startEmbla = () => {
@@ -259,12 +262,6 @@ store( 'rt-carousel/carousel', {
 					)
 						? ( rawOptions.align as 'start' | 'center' | 'end' )
 						: 'start';
-
-					const containScroll = [ 'trimSnaps', 'keepSnaps', '' ].includes(
-						rawOptions.containScroll as string,
-					)
-						? ( rawOptions.containScroll as 'trimSnaps' | 'keepSnaps' | '' )
-						: 'trimSnaps';
 
 					const direction = [ 'ltr', 'rtl' ].includes(
 						rawOptions.direction as string,
@@ -285,10 +282,10 @@ store( 'rt-carousel/carousel', {
 					const options: EmblaOptionsType = {
 						...rawOptions,
 						align,
-						containScroll,
+						containScroll: normalizeContainScroll( rawOptions.containScroll ),
 						direction,
 						slidesToScroll,
-						container: queryLoopContainer || null,
+						container: dynamicListContainer || null,
 					};
 
 					const plugins = [];
@@ -297,11 +294,7 @@ store( 'rt-carousel/carousel', {
 						plugins.push( Autoplay( context.autoplay as AutoplayOptionsType ) );
 					}
 
-					const embla = EmblaCarousel(
-						viewport as HTMLElement,
-						options,
-						plugins,
-					);
+					const embla = EmblaCarousel( viewport, options, plugins );
 
 					emblaInstances.set( viewport, embla );
 					viewport[ EMBLA_KEY ] = embla;
@@ -372,7 +365,7 @@ store( 'rt-carousel/carousel', {
 				if ( 'IntersectionObserver' in window ) {
 					intersectionObserver = new IntersectionObserver(
 						( entries ) => {
-							if ( entries[ 0 ].isIntersecting ) {
+							if ( entries[ 0 ]?.isIntersecting ) {
 								init();
 								intersectionObserver?.disconnect();
 								intersectionObserver = undefined;
