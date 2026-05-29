@@ -861,10 +861,10 @@ describe( 'Carousel View Module', () => {
 				mockVisibleViewport( viewport );
 
 				const applyFilters = jest.fn( ( hookName, value ) => {
-					if ( hookName === 'rtcamp.carouselKit.emblaOptions' ) {
+					if ( hookName === 'rtcamp.rtCarousel.emblaOptions' ) {
 						return { ...value, duration: 40 };
 					}
-					if ( hookName === 'rtcamp.carouselKit.emblaPlugins' ) {
+					if ( hookName === 'rtcamp.rtCarousel.emblaPlugins' ) {
 						return [ ...value, extraPlugin ];
 					}
 					return value;
@@ -888,7 +888,7 @@ describe( 'Carousel View Module', () => {
 					expect( applyFilters ).toHaveBeenCalledTimes( 2 );
 					expect( applyFilters ).toHaveBeenNthCalledWith(
 						1,
-						'rtcamp.carouselKit.emblaOptions',
+						'rtcamp.rtCarousel.emblaOptions',
 						expect.objectContaining( { duration: 25 } ),
 						expect.objectContaining( { context: mockContext, root: wrapper, viewport } ),
 					);
@@ -898,7 +898,7 @@ describe( 'Carousel View Module', () => {
 						[ extraPlugin ],
 					);
 					expect( doAction ).toHaveBeenCalledWith(
-						'rtcamp.carouselKit.emblaInit',
+						'rtcamp.rtCarousel.emblaInit',
 						mockEmbla,
 						expect.objectContaining( {
 							context: mockContext,
@@ -923,7 +923,7 @@ describe( 'Carousel View Module', () => {
 				const mockEmbla = createMockEmblaInstance();
 				const originalIntersectionObserver = window.IntersectionObserver;
 				const applyFilters = jest.fn( ( hookName, value ) => {
-					if ( hookName === 'rtcamp.carouselKit.emblaOptions' ) {
+					if ( hookName === 'rtcamp.rtCarousel.emblaOptions' ) {
 						return undefined;
 					}
 					return value;
@@ -968,7 +968,7 @@ describe( 'Carousel View Module', () => {
 				const mockEmbla = createMockEmblaInstance();
 				const originalIntersectionObserver = window.IntersectionObserver;
 				const applyFilters = jest.fn( ( hookName, value ) => {
-					if ( hookName === 'rtcamp.carouselKit.emblaPlugins' ) {
+					if ( hookName === 'rtcamp.rtCarousel.emblaPlugins' ) {
 						return 'not-an-array';
 					}
 					return value;

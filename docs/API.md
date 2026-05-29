@@ -14,19 +14,19 @@ import { addFilter } from '@wordpress/hooks';
 import AutoHeight from 'embla-carousel-auto-height';
 
 addFilter(
-    'rtcamp.carouselKit.emblaOptions',
+    'rtcamp.rtCarousel.emblaOptions',
     'my-plugin/custom-options',
     ( options ) => ( { ...options, duration: 40 } )
 );
 
 addFilter(
-    'rtcamp.carouselKit.emblaPlugins',
+    'rtcamp.rtCarousel.emblaPlugins',
     'my-plugin/auto-height',
     ( plugins ) => [ ...plugins, AutoHeight() ]
 );
 ```
 
-Both filter callbacks receive the filtered value as their first argument and the filter context object as their second argument. `rtcamp.carouselKit.emblaPlugins` also receives the filtered options on the `options` property of this object.
+Both filter callbacks receive the filtered value as their first argument and the filter context object as their second argument. `rtcamp.rtCarousel.emblaPlugins` also receives the filtered options on the `options` property of this object.
 
 rtCarousel also exposes an action after Embla has initialized so integrations can call Embla methods or subscribe to Embla events:
 
@@ -34,7 +34,7 @@ rtCarousel also exposes an action after Embla has initialized so integrations ca
 import { addAction } from '@wordpress/hooks';
 
 addAction(
-    'rtcamp.carouselKit.emblaInit',
+    'rtcamp.rtCarousel.emblaInit',
     'my-plugin/custom-events',
     ( embla, { root } ) => {
         embla.on( 'select', () => {
@@ -50,8 +50,8 @@ addAction(
 | `root` | `HTMLElement` | Root `.rt-carousel` element. |
 | `viewport` | `HTMLElement` | Embla viewport element. |
 | `dynamicListContainer` | `HTMLElement \| null` | Query Loop or Terms Query template container when present. |
-| `options` | `EmblaOptionsType` | Passed to `rtcamp.carouselKit.emblaPlugins` and `rtcamp.carouselKit.emblaInit`; contains filtered options. |
-| `plugins` | `EmblaPluginType[]` | Only passed to `rtcamp.carouselKit.emblaInit`; contains filtered plugins. |
+| `options` | `EmblaOptionsType` | Passed to `rtcamp.rtCarousel.emblaPlugins` and `rtcamp.rtCarousel.emblaInit`; contains filtered options. |
+| `plugins` | `EmblaPluginType[]` | Only passed to `rtcamp.rtCarousel.emblaInit`; contains filtered plugins. |
 
 ## Context (`CarouselContext`)
 

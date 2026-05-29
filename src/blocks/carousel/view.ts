@@ -371,13 +371,13 @@ store( 'rt-carousel/carousel', {
 					};
 
 					const filteredOptions = applyEmblaFilter(
-						'rtcamp.carouselKit.emblaOptions',
+						'rtcamp.rtCarousel.emblaOptions',
 						options,
 						filterContext,
 					);
 
 					const filteredPlugins = applyEmblaFilter(
-						'rtcamp.carouselKit.emblaPlugins',
+						'rtcamp.rtCarousel.emblaPlugins',
 						plugins,
 						{ ...filterContext, options: filteredOptions },
 					);
@@ -424,7 +424,7 @@ store( 'rt-carousel/carousel', {
 
 					updateState();
 					doEmblaAction(
-						'rtcamp.carouselKit.emblaInit',
+						'rtcamp.rtCarousel.emblaInit',
 						embla,
 						{
 							...filterContext,
