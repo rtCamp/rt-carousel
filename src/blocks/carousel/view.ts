@@ -72,6 +72,18 @@ const getCurrentSnap = ( context: CarouselContext ): number => {
 	);
 };
 
+const interpolateSlidePattern = (
+	pattern: string,
+	currentSlide: string,
+	totalSlides: string,
+): string => {
+	return pattern
+		.split( '{{currentSlide}}' )
+		.join( currentSlide )
+		.split( '{{totalSlides}}' )
+		.join( totalSlides );
+};
+
 const getSlideAnnouncement = (
 	context: CarouselContext,
 	selectedIndex: number,
@@ -80,9 +92,11 @@ const getSlideAnnouncement = (
 	if ( ! slideCount || slideCount <= 1 || ! context.announcementPattern ) {
 		return '';
 	}
-	return context.announcementPattern
-		.replace( '{{currentSlide}}', ( selectedIndex + 1 ).toString() )
-		.replace( '{{totalSlides}}', slideCount.toString() );
+	return interpolateSlidePattern(
+		context.announcementPattern,
+		( selectedIndex + 1 ).toString(),
+		slideCount.toString(),
+	);
 };
 
 const updateSlideAnnouncement = (
@@ -217,9 +231,11 @@ store( 'rt-carousel/carousel', {
 			const context = getContext<CarouselContext>();
 			const current = getCurrentSnap( context ).toString();
 			const total = getSnapCount( context ).toString();
-			return ( context.countLabelPattern || 'Slide {{currentSlide}} of {{totalSlides}}' )
-				.replace( '{{currentSlide}}', current )
-				.replace( '{{totalSlides}}', total );
+			return interpolateSlidePattern(
+				context.countLabelPattern || 'Slide {{currentSlide}} of {{totalSlides}}',
+				current,
+				total,
+			);
 		},
 		getProgressBarNow: () => {
 			return Math.round( getProgress() * 100 );

@@ -1,4 +1,5 @@
 import { useBlockProps } from '@wordpress/block-editor';
+import { __ } from '@wordpress/i18n';
 
 export default function Save() {
 	return (
@@ -7,6 +8,7 @@ export default function Save() {
 				className: 'rt-carousel-counter',
 			} ) }
 			role="group"
+			aria-label={ __( 'Carousel counter', 'rt-carousel' ) }
 			data-wp-interactive="rt-carousel/carousel"
 			data-wp-bind--aria-label="callbacks.getCountLabel"
 		>

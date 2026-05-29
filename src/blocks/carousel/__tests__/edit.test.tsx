@@ -1,3 +1,9 @@
+/**
+ * Unit tests for the carousel editor setup flow.
+ *
+ * @package
+ */
+
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Edit from '../edit';
@@ -15,8 +21,6 @@ jest.mock( '@wordpress/block-editor', () => ( {
 } ) );
 
 jest.mock( '@wordpress/components', () => {
-	const React = jest.requireActual( 'react' );
-
 	const Button = ( {
 		children,
 		onClick,

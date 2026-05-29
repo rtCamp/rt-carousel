@@ -101,6 +101,7 @@ const renderViewportEdit = () =>
 				scrollProgress: 0,
 				setScrollProgress: jest.fn(),
 				selectedIndex: 0,
+				scrollSnaps: [],
 				slideCount: 0,
 				carouselOptions: {
 					loop: false,
