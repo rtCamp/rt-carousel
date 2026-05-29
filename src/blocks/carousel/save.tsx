@@ -52,6 +52,11 @@ export default function Save( {
 		slideCount: 0,
 		/* translators: %d: slide number */
 		ariaLabelPattern: __( 'Go to slide %d', 'rt-carousel' ),
+		/* translators: {{currentSlide}}: current slide number, {{totalSlides}}: total slide count. */
+		countLabelPattern: __(
+			'Slide {{currentSlide}} of {{totalSlides}}',
+			'rt-carousel',
+		),
 		announcement: '',
 		shouldAnnounce: false,
 		/* translators: {{currentSlide}}: current slide number, {{totalSlides}}: total slide count. */

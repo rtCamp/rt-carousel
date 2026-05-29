@@ -61,6 +61,29 @@ const getProgress = (): number => {
 	return Math.max( 0, Math.min( 1, scrollProgress || 0 ) );
 };
 
+const getSnapCount = ( context: CarouselContext ): number => {
+	return Math.max( context.scrollSnaps?.length || context.slideCount || 0, 1 );
+};
+
+const getCurrentSnap = ( context: CarouselContext ): number => {
+	return Math.min(
+		Math.max( ( context.selectedIndex || 0 ) + 1, 1 ),
+		getSnapCount( context ),
+	);
+};
+
+const interpolateSlidePattern = (
+	pattern: string,
+	currentSlide: string,
+	totalSlides: string,
+): string => {
+	return pattern
+		.split( '{{currentSlide}}' )
+		.join( currentSlide )
+		.split( '{{totalSlides}}' )
+		.join( totalSlides );
+};
+
 const getSlideAnnouncement = (
 	context: CarouselContext,
 	selectedIndex: number,
@@ -69,9 +92,11 @@ const getSlideAnnouncement = (
 	if ( ! slideCount || slideCount <= 1 || ! context.announcementPattern ) {
 		return '';
 	}
-	return context.announcementPattern
-		.replace( '{{currentSlide}}', ( selectedIndex + 1 ).toString() )
-		.replace( '{{totalSlides}}', slideCount.toString() );
+	return interpolateSlidePattern(
+		context.announcementPattern,
+		( selectedIndex + 1 ).toString(),
+		slideCount.toString(),
+	);
 };
 
 const updateSlideAnnouncement = (
@@ -195,6 +220,22 @@ store( 'rt-carousel/carousel', {
 			};
 			const index = ( snap?.index || 0 ) + 1;
 			return context.ariaLabelPattern.replace( '%d', index.toString() );
+		},
+		getCurrentCount: () => {
+			return getCurrentSnap( getContext<CarouselContext>() ).toString();
+		},
+		getTotalCount: () => {
+			return getSnapCount( getContext<CarouselContext>() ).toString();
+		},
+		getCountLabel: () => {
+			const context = getContext<CarouselContext>();
+			const current = getCurrentSnap( context ).toString();
+			const total = getSnapCount( context ).toString();
+			return interpolateSlidePattern(
+				context.countLabelPattern || 'Slide {{currentSlide}} of {{totalSlides}}',
+				current,
+				total,
+			);
 		},
 		getProgressBarNow: () => {
 			return Math.round( getProgress() * 100 );

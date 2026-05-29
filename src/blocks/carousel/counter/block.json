@@ -1,0 +1,19 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"version": "1.0.0",
+	"name": "rt-carousel/carousel-counter",
+	"title": "Carousel Counter",
+	"category": "rt-carousel",
+	"icon": "editor-ol",
+	"ancestor": [
+		"rt-carousel/carousel"
+	],
+	"description": "Current slide counter for the carousel.",
+	"textdomain": "rt-carousel",
+	"supports": {
+		"interactivity": true
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css"
+}
