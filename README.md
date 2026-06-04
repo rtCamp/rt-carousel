@@ -29,7 +29,7 @@ Easily create dynamic, accessible, and customizable carousels for any content ty
 
 | Requirement | Minimum      | Recommended |
 | ----------- | ------------ | ----------- |
-| WordPress   | 6.6+         | 6.9+        |
+| WordPress   | 6.6+         | 7.0+        |
 | PHP         | 8.2+         | 8.2+        |
 | Gutenberg   | Not required | —           |
 

@@ -2,9 +2,9 @@
 Contributors: rtcamp, danish17, immasud, gagan0123, up1512001, mi5t4n, aviral89, vishal4669, imrraaj, aishwarryapande
 Tags: carousel, slider, block, interactivity-api, embla
 Requires at least: 6.6
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,14 @@ rtCarousel is the successor to Carousel Kit. Simply install and activate rtCarou
 1. Carousel block in the editor with multiple slides
 
 == Changelog ==
+
+= 2.0.2 =
+* New: Carousel Counter block with an accessible current/total slide indicator
+* New: Slide template picker and starter templates for new carousel blocks
+* New: Terms Query support and Terms Query carousel pattern
+* Tweak: Confirm compatibility with WordPress 7.0
+* Tweak: Update JavaScript dependencies for upstream security and maintenance fixes
+
 
 = 2.0.1 =
 * New: Add a11y announcements for carousel slide changes
