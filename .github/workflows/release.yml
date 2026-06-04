@@ -18,6 +18,9 @@ jobs:
       contents: read
 
     steps:
+      # actions/checkout v4 is intentionally used here instead of a newer major version.
+      # 10up/action-wordpress-plugin-deploy requires v4 for compatibility.
+      # See: https://github.com/marketplace/actions/wordpress-plugin-deploy#example-workflow-files
       - name: Checkout Code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
