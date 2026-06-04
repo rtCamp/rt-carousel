@@ -13,6 +13,8 @@
 .npmrc
 .nvmrc
 .stylelintignore
+.wp-env.json
+.wp-env.override.json
 babel.config.js
 commitlint.config.js
 jest.config.js
@@ -31,6 +33,7 @@ tests/
 # Documentation
 docs/
 DEVELOPMENT.md
+README.md
 
 # WordPress.org assets (separate from plugin)
 wp-assets/
@@ -70,6 +73,7 @@ blueprint.json
 *.log
 *.map
 *.zip
+coverage/
 .distignore
 .DS_Store
 Thumbs.db
