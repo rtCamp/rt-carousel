@@ -47,6 +47,7 @@
     "@wordpress/icons": "11.5.0",
     "@wordpress/interactivity": "6.37.0",
     "embla-carousel": "8.6.0",
+    "embla-carousel-auto-scroll": "8.6.0",
     "embla-carousel-autoplay": "8.6.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
