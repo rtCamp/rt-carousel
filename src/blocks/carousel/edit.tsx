@@ -54,6 +54,7 @@ export default function Edit( {
 		autoplayStopOnMouseEnter,
 		ariaLabel,
 		slidesToScroll = '1',
+		autoScroll,
 	} = attributes;
 
 	const [ emblaApi, setEmblaApi ] = useState<EmblaCarouselType | undefined>();
@@ -421,7 +422,12 @@ export default function Edit( {
 					<ToggleControl
 						label={ __( 'Enable Autoplay', 'rt-carousel' ) }
 						checked={ autoplay }
-						onChange={ ( value ) => setAttributes( { autoplay: value } ) }
+						onChange={ ( value ) => {
+							setAttributes( { 
+								autoplay: value,
+								autoScroll: value ? false : autoScroll,
+							 } ) 
+						}}
 					/>
 					{ autoplay && (
 						<>
@@ -459,6 +465,20 @@ export default function Edit( {
 							/>
 						</>
 					) }
+				</PanelBody>
+				<PanelBody
+					title={ __( 'Auto Scroll', 'rt-carousel' ) }
+					initialOpen={ false }
+				>
+				<ToggleControl
+					label={ __( 'Enable Auto Scroll', 'rt-carousel' ) }
+					checked={ autoScroll }
+					onChange={ ( value ) => setAttributes( {
+						autoScroll: value,
+						autoplay: value ? false : autoplay,
+					} ) }
+				/>
+
 				</PanelBody>
 			</InspectorControls>
 			<InspectorAdvancedControls>

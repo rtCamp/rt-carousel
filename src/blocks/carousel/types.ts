@@ -18,6 +18,7 @@ export type CarouselAttributes = {
 	ariaLabel: string;
 	slideGap: number;
 	slidesToScroll: string;
+	autoScroll: boolean;
 };
 
 export type CarouselViewportAttributes = Record<string, never>;
