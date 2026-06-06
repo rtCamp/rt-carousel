@@ -4,6 +4,8 @@ import EmblaCarousel, {
 	type EmblaCarouselType,
 } from 'embla-carousel';
 import Autoplay, { type AutoplayOptionsType } from 'embla-carousel-autoplay';
+import AutoScroll, { type AutoScrollOptionsType } from 'embla-carousel-auto-scroll';
+
 import type { CarouselContext } from './types';
 import {
 	DYNAMIC_LIST_CONTAINER_SELECTOR,
@@ -308,6 +310,10 @@ store( 'rt-carousel/carousel', {
 
 					if ( context.autoplay ) {
 						plugins.push( Autoplay( context.autoplay as AutoplayOptionsType ) );
+					}
+
+					if (context.autoScroll) {
+						plugins.push( AutoScroll( context.autoScroll as AutoScrollOptionsType) );
 					}
 
 					const embla = EmblaCarousel( viewport, options, plugins );

@@ -66,4 +66,12 @@ export type CarouselContext = {
 	ref?: HTMLElement | null;
 	slideCount: number;
 	initialized?: boolean;
+	autoScroll: boolean | {
+		speed: number;
+		direction: 'forward' | 'backward';
+		startDelay: number;
+		stopOnInteraction: boolean;
+		stopOnMouseEnter: boolean;
+		stopOnFocusIn: boolean;
+	};
 };
