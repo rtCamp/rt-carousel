@@ -58,7 +58,8 @@ export default function Edit( {
 		autoScrollSpeed,
 		autoScrollDirection,
 		autoScrollStartDelay,
-		autoScrollStopOnInteraction
+		autoScrollStopOnInteraction,
+		autoScrollStopOnMouseEnter
 	} = attributes;
 
 	const [ emblaApi, setEmblaApi ] = useState<EmblaCarouselType | undefined>();
@@ -523,6 +524,14 @@ export default function Edit( {
 							setAttributes( { autoScrollStopOnInteraction: value } )
 						}
 						help={ __( 'Stop auto scroll when user interacts with carousel.', 'rt-carousel' ) }
+					/>
+					<ToggleControl
+						label={ __( 'Stop on Mouse Enter', 'rt-carousel' ) }
+						checked={ autoScrollStopOnMouseEnter }
+						onChange={ ( value ) =>
+							setAttributes( { autoScrollStopOnMouseEnter: value } )
+						}
+						help={ __( 'Stop auto scroll when mouse hovers over carousel.', 'rt-carousel' ) }
 					/>
 				 </> ) }
 				</PanelBody>

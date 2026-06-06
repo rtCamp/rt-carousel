@@ -106,6 +106,10 @@
 		"autoScrollStopOnInteraction": {
 			"type": "boolean",
 			"default": true
+		},
+		"autoScrollStopOnMouseEnter": {
+			"type": "boolean",
+			"default": false
 		}
 	},
 	"editorScript": "file:./index.js",

@@ -23,6 +23,7 @@ export type CarouselAttributes = {
 	autoScrollDirection: 'forward' | 'backward';
 	autoScrollStartDelay: number;
 	autoScrollStopOnInteraction: boolean;
+	autoScrollStopOnMouseEnter: boolean;
 };
 
 export type CarouselViewportAttributes = Record<string, never>;
