@@ -56,6 +56,7 @@ export default function Edit( {
 		slidesToScroll = '1',
 		autoScroll,
 		autoScrollSpeed,
+		autoScrollDirection
 	} = attributes;
 
 	const [ emblaApi, setEmblaApi ] = useState<EmblaCarouselType | undefined>();
@@ -488,6 +489,17 @@ export default function Edit( {
 						}
 						min={ 1 }
 						max={ 10 }
+					/>
+					<SelectControl
+						label={ __( 'Direction', 'rt-carousel' ) }
+						value={ autoScrollDirection }
+						options={ [
+							{ label: __( 'Forward', 'rt-carousel' ), value: 'forward' },
+							{ label: __( 'Backward', 'rt-carousel' ), value: 'backward' },
+						] }
+						onChange={ ( value ) =>
+							setAttributes( { autoScrollDirection: value as  CarouselAttributes['autoScrollDirection']} )
+						}
 					/>
 				 </> ) }
 				</PanelBody>

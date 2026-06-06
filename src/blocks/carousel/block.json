@@ -93,6 +93,11 @@
 		"autoScrollSpeed": {
 			"type": "number",
 			"default": 2
+		},
+		"autoScrollDirection": {
+			"type": "string",
+			"default": "ltr",
+			"enum": ["forward", "backward"]
 		}
 	},
 	"editorScript": "file:./index.js",

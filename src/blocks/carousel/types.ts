@@ -20,6 +20,7 @@ export type CarouselAttributes = {
 	slidesToScroll: string;
 	autoScroll: boolean;
 	autoScrollSpeed: number;
+	autoScrollDirection: 'forward' | 'backward';
 };
 
 export type CarouselViewportAttributes = Record<string, never>;
