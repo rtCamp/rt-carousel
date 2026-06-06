@@ -102,6 +102,10 @@
 		"autoScrollStartDelay": {
 			"type": "number",
 			"default": 1000
+		},
+		"autoScrollStopOnInteraction": {
+			"type": "boolean",
+			"default": true
 		}
 	},
 	"editorScript": "file:./index.js",

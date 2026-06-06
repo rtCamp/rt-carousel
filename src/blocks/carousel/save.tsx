@@ -25,7 +25,8 @@ export default function Save( {
 		autoScroll,
 		autoScrollSpeed,
 		autoScrollDirection,
-		autoScrollStartDelay
+		autoScrollStartDelay,
+		autoScrollStopOnInteraction,
 	} = attributes;
 
 	// Pass configuration to the frontend via data-wp-context
@@ -72,7 +73,7 @@ export default function Save( {
 			speed: autoScrollSpeed,
 			direction: autoScrollDirection,
 			startDelay: autoScrollStartDelay,
-			stopOnInteraction: true,
+			stopOnInteraction: autoScrollStopOnInteraction,
 			stopOnMouseEnter: false,
 			stopOnFocusIn: true,
 		}
