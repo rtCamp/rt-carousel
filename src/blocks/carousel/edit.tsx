@@ -317,11 +317,11 @@ export default function Edit( {
 					<ToggleControl
 						label={ __( 'Loop', 'rt-carousel' ) }
 						checked={ loop }
+						disabled={ autoScrollDirection === 'backward' }
 						onChange={ ( value ) => setAttributes( { loop: value } ) }
-						help={ __(
-							'Enables infinite scrolling of slides.',
-							'rt-carousel',
-						) }
+						help={ autoScrollDirection === 'backward' 
+								? __( 'Loop is required for backward auto scroll.', 'rt-carousel' )
+								: __( 'Enables infinite scrolling of slides.', 'rt-carousel' ) }
 					/>
 					<ToggleControl
 						label={ __( 'Free Drag', 'rt-carousel' ) }
@@ -498,7 +498,10 @@ export default function Edit( {
 							{ label: __( 'Backward', 'rt-carousel' ), value: 'backward' },
 						] }
 						onChange={ ( value ) =>
-							setAttributes( { autoScrollDirection: value as  CarouselAttributes['autoScrollDirection']} )
+							setAttributes( { 
+								autoScrollDirection: value as  CarouselAttributes['autoScrollDirection'],
+								loop: value === 'backward' ? true : loop,
+							} )
 						}
 					/>
 				 </> ) }
