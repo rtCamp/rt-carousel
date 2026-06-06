@@ -157,6 +157,12 @@ const createAttributes = (): CarouselAttributes => ( {
 	ariaLabel: 'Carousel',
 	slidesToScroll: '1',
 	slideGap: 0,
+	autoScroll: false,
+	autoScrollSpeed: 2,
+	autoScrollDirection: 'forward' as const,
+	autoScrollStartDelay: 1000,
+	autoScrollStopOnInteraction: true,
+	autoScrollStopOnMouseEnter: false,
 } );
 
 describe( 'Carousel Edit setup flow', () => {
@@ -217,4 +223,16 @@ describe( 'Carousel Edit setup flow', () => {
 			Object.defineProperty( globalThis, 'document', originalDocumentDescriptor );
 		}
 	} );
+
+	it( 'should have correct default autoScroll attributes', () => {
+		const attributes = createAttributes();
+		expect( attributes.autoScroll ).toBe( false );
+		expect( attributes.autoScrollSpeed ).toBe( 2 );
+		expect( attributes.autoScrollDirection ).toBe( 'forward' );
+		expect( attributes.autoScrollStartDelay ).toBe( 1000 );
+		expect( attributes.autoScrollStopOnInteraction ).toBe( true );
+		expect( attributes.autoScrollStopOnMouseEnter ).toBe( false );
+	} );
+
+
 } );
