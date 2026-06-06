@@ -89,6 +89,10 @@
 		"autoScroll": {
 			"type": "boolean",
 			"default": false
+		},
+		"autoScrollSpeed": {
+			"type": "number",
+			"default": 2
 		}
 	},
 	"editorScript": "file:./index.js",

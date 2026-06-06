@@ -23,6 +23,7 @@ export default function Save( {
 		height,
 		slidesToScroll,
 		autoScroll,
+		autoScrollSpeed,
 	} = attributes;
 
 	// Pass configuration to the frontend via data-wp-context
@@ -66,7 +67,7 @@ export default function Save( {
 			'rt-carousel',
 		),
 		autoScroll: autoScroll ? {
-			speed: 2,
+			speed: autoScrollSpeed,
 			direction: 'forward',
 			startDelay: 1000,
 			stopOnInteraction: true,

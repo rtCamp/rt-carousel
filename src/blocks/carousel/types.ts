@@ -19,6 +19,7 @@ export type CarouselAttributes = {
 	slideGap: number;
 	slidesToScroll: string;
 	autoScroll: boolean;
+	autoScrollSpeed: number;
 };
 
 export type CarouselViewportAttributes = Record<string, never>;

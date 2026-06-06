@@ -55,6 +55,7 @@ export default function Edit( {
 		ariaLabel,
 		slidesToScroll = '1',
 		autoScroll,
+		autoScrollSpeed,
 	} = attributes;
 
 	const [ emblaApi, setEmblaApi ] = useState<EmblaCarouselType | undefined>();
@@ -478,7 +479,17 @@ export default function Edit( {
 						autoplay: value ? false : autoplay,
 					} ) }
 				/>
-
+				{ autoScroll && ( <> 
+					<RangeControl
+						label={ __( 'Speed', 'rt-carousel' ) }
+						value={ autoScrollSpeed }
+						onChange={ ( value ) =>
+							setAttributes( { autoScrollSpeed: value ?? 2 } )
+						}
+						min={ 1 }
+						max={ 10 }
+					/>
+				 </> ) }
 				</PanelBody>
 			</InspectorControls>
 			<InspectorAdvancedControls>
