@@ -24,7 +24,8 @@ export default function Save( {
 		slidesToScroll,
 		autoScroll,
 		autoScrollSpeed,
-		autoScrollDirection
+		autoScrollDirection,
+		autoScrollStartDelay
 	} = attributes;
 
 	// Pass configuration to the frontend via data-wp-context
@@ -70,7 +71,7 @@ export default function Save( {
 		autoScroll: autoScroll ? {
 			speed: autoScrollSpeed,
 			direction: autoScrollDirection,
-			startDelay: 1000,
+			startDelay: autoScrollStartDelay,
 			stopOnInteraction: true,
 			stopOnMouseEnter: false,
 			stopOnFocusIn: true,

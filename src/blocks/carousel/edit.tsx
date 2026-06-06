@@ -56,7 +56,8 @@ export default function Edit( {
 		slidesToScroll = '1',
 		autoScroll,
 		autoScrollSpeed,
-		autoScrollDirection
+		autoScrollDirection,
+		autoScrollStartDelay
 	} = attributes;
 
 	const [ emblaApi, setEmblaApi ] = useState<EmblaCarouselType | undefined>();
@@ -503,6 +504,16 @@ export default function Edit( {
 								loop: value === 'backward' ? true : loop,
 							} )
 						}
+					/>
+					<RangeControl
+						label={ __( 'Start Delay (ms)', 'rt-carousel' ) }
+						value={ autoScrollStartDelay }
+						onChange={ ( value ) =>
+							setAttributes( { autoScrollStartDelay: value ?? 1000 } )
+						}
+						min={ 0 }
+						max={ 10000 }
+						step={ 100 }
 					/>
 				 </> ) }
 				</PanelBody>

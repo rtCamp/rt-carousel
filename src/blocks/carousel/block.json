@@ -98,6 +98,10 @@
 			"type": "string",
 			"default": "ltr",
 			"enum": ["forward", "backward"]
+		},
+		"autoScrollStartDelay": {
+			"type": "number",
+			"default": 1000
 		}
 	},
 	"editorScript": "file:./index.js",
