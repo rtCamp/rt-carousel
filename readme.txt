@@ -14,8 +14,6 @@ A modular, high-performance carousel block for WordPress, powered by the Interac
 
 **rtCarousel** is a flexible, accessible carousel block for the WordPress block editor. Build dynamic carousels for posts, testimonials, images, and more—without writing code.
 
-Plugin page: https://wordpress.org/plugins/rt-carousel/
-
 = Features =
 
 * **Compound Block Architecture** – Mix and match any blocks inside the carousel
