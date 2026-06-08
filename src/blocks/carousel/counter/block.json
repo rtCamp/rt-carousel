@@ -11,6 +11,7 @@
 	],
 	"description": "Current slide counter for the carousel.",
 	"textdomain": "rt-carousel",
+	"attributes": {},
 	"supports": {
 		"interactivity": true
 	},
