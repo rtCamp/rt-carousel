@@ -1,5 +1,5 @@
 === rtCarousel ===
-Contributors: rtcamp, danish17, immasud, gagan0123, up1512001, mi5t4n, aviral89, vishal4669, imrraaj, aishwarryapande
+Contributors: rtcamp, iamdanih17, immasud, gagan0123, up1512001, mi5t4n, aviral89, vishal4669, imrraaj, aishwarryapande
 Tags: carousel, slider, block, interactivity-api, embla
 Requires at least: 6.6
 Tested up to: 7.0
