@@ -1,9 +1,14 @@
 # rtCarousel
 
+![rtCarousel banner](wp-assets/banner-1544x500.png)
+
 ![Build Status](https://github.com/rtCamp/rt-carousel/actions/workflows/release.yml/badge.svg?branch=main)
 ![Latest Release](https://img.shields.io/github/v/release/rtCamp/rt-carousel)
+![WordPress Plugin Version](https://img.shields.io/wordpress/plugin/v/rt-carousel)
 
 **A modular, high-performance carousel block for WordPress, powered by the Interactivity API and Embla Carousel.**
+
+[View on WordPress.org](https://wordpress.org/plugins/rt-carousel/)
 
 Easily create dynamic, accessible, and customizable carousels for any content type—posts, testimonials, images, and more. Designed for speed, flexibility, and seamless integration with the WordPress block editor.
 
@@ -29,7 +34,7 @@ Easily create dynamic, accessible, and customizable carousels for any content ty
 
 | Requirement | Minimum      | Recommended |
 | ----------- | ------------ | ----------- |
-| WordPress   | 6.6+         | 6.9+        |
+| WordPress   | 6.6+         | 7.0+        |
 | PHP         | 8.2+         | 8.2+        |
 | Gutenberg   | Not required | —           |
 
