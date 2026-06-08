@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.2](https://github.com/rtCamp/rt-carousel/compare/2.0.1...2.0.2) (2026-06-04)
+## [2.0.2](https://github.com/rtCamp/rt-carousel/compare/2.0.1...2.0.2) (2026-06-08)
 
 
 ### Features
@@ -10,7 +10,7 @@
 * add Terms Query support and Terms Query carousel pattern ([#131](https://github.com/rtCamp/rt-carousel/pull/131)) ([b0cf807](https://github.com/rtCamp/rt-carousel/commit/b0cf807))
 
 
-### Chores
+### Maintenance
 
 * confirm compatibility with WordPress 7.0
 * update axios from 1.15.0 to 1.16.0 ([#136](https://github.com/rtCamp/rt-carousel/pull/136)) ([6073e39](https://github.com/rtCamp/rt-carousel/commit/6073e39))
