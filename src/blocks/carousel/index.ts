@@ -15,7 +15,9 @@ import { __ } from '@wordpress/i18n';
 registerBlockType( metadata as BlockConfiguration<CarouselAttributes>, {
 	edit: Edit,
 	save: Save,
-	deprecated,
+	deprecated: deprecated as unknown as NonNullable<
+		BlockConfiguration<CarouselAttributes>[ 'deprecated' ]
+	>,
 } );
 
 const styles = [

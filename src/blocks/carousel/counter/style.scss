@@ -1,0 +1,24 @@
+.rt-carousel-counter {
+	display: inline-flex;
+	align-items: baseline;
+	gap: var(--rt-carousel-counter-gap, 0);
+	color: var(--rt-carousel-counter-color, inherit);
+	font-size: var(--rt-carousel-counter-font-size, 1rem);
+	font-weight: var(--rt-carousel-counter-font-weight, 500);
+	line-height: 1;
+	white-space: nowrap;
+
+	&__current {
+		color: var(--rt-carousel-counter-current-color, currentcolor);
+	}
+
+	&__separator {
+		color: var(--rt-carousel-counter-separator-color, currentcolor);
+		opacity: var(--rt-carousel-counter-muted-opacity, 0.72);
+	}
+
+	&__total {
+		color: var(--rt-carousel-counter-total-color, currentcolor);
+		opacity: var(--rt-carousel-counter-muted-opacity, 0.72);
+	}
+}

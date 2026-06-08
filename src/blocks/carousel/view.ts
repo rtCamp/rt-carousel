@@ -5,6 +5,11 @@ import EmblaCarousel, {
 } from 'embla-carousel';
 import Autoplay, { type AutoplayOptionsType } from 'embla-carousel-autoplay';
 import type { CarouselContext } from './types';
+import {
+	DYNAMIC_LIST_CONTAINER_SELECTOR,
+	CAROUSEL_SLIDE_SELECTOR,
+} from './dynamic-list-selectors';
+import { normalizeContainScroll } from './embla-options';
 
 type ElementWithRef = {
 	ref?: HTMLElement | null;
@@ -56,6 +61,29 @@ const getProgress = (): number => {
 	return Math.max( 0, Math.min( 1, scrollProgress || 0 ) );
 };
 
+const getSnapCount = ( context: CarouselContext ): number => {
+	return Math.max( context.scrollSnaps?.length || context.slideCount || 0, 1 );
+};
+
+const getCurrentSnap = ( context: CarouselContext ): number => {
+	return Math.min(
+		Math.max( ( context.selectedIndex || 0 ) + 1, 1 ),
+		getSnapCount( context ),
+	);
+};
+
+const interpolateSlidePattern = (
+	pattern: string,
+	currentSlide: string,
+	totalSlides: string,
+): string => {
+	return pattern
+		.split( '{{currentSlide}}' )
+		.join( currentSlide )
+		.split( '{{totalSlides}}' )
+		.join( totalSlides );
+};
+
 const getSlideAnnouncement = (
 	context: CarouselContext,
 	selectedIndex: number,
@@ -64,9 +92,11 @@ const getSlideAnnouncement = (
 	if ( ! slideCount || slideCount <= 1 || ! context.announcementPattern ) {
 		return '';
 	}
-	return context.announcementPattern
-		.replace( '{{currentSlide}}', ( selectedIndex + 1 ).toString() )
-		.replace( '{{totalSlides}}', slideCount.toString() );
+	return interpolateSlidePattern(
+		context.announcementPattern,
+		( selectedIndex + 1 ).toString(),
+		slideCount.toString(),
+	);
 };
 
 const updateSlideAnnouncement = (
@@ -157,9 +187,9 @@ store( 'rt-carousel/carousel', {
 				return false;
 			}
 
-			// Check for either standard slide or Query Loop post
+			// Check for either standard slide or dynamic Query item.
 			const slide = getElementRef( getElement() )?.closest?.(
-				'.embla__slide, .wp-block-post',
+				CAROUSEL_SLIDE_SELECTOR,
 			);
 
 			if ( ! slide || ! slide.parentElement ) {
@@ -167,9 +197,7 @@ store( 'rt-carousel/carousel', {
 			}
 
 			const slides = Array.from( slide.parentElement.children ).filter(
-				( child: Element ) =>
-					child.classList?.contains( 'embla__slide' ) ||
-					child.classList?.contains( 'wp-block-post' ),
+				( child: Element ) => child.matches( CAROUSEL_SLIDE_SELECTOR ),
 			);
 
 			const index = slides.indexOf( slide );
@@ -193,6 +221,22 @@ store( 'rt-carousel/carousel', {
 			const index = ( snap?.index || 0 ) + 1;
 			return context.ariaLabelPattern.replace( '%d', index.toString() );
 		},
+		getCurrentCount: () => {
+			return getCurrentSnap( getContext<CarouselContext>() ).toString();
+		},
+		getTotalCount: () => {
+			return getSnapCount( getContext<CarouselContext>() ).toString();
+		},
+		getCountLabel: () => {
+			const context = getContext<CarouselContext>();
+			const current = getCurrentSnap( context ).toString();
+			const total = getSnapCount( context ).toString();
+			return interpolateSlidePattern(
+				context.countLabelPattern || 'Slide {{currentSlide}} of {{totalSlides}}',
+				current,
+				total,
+			);
+		},
 		getProgressBarNow: () => {
 			return Math.round( getProgress() * 100 );
 		},
@@ -214,7 +258,7 @@ store( 'rt-carousel/carousel', {
 					return;
 				}
 
-				const viewport = element.querySelector( '.embla' );
+				const viewport = element.querySelector<EmblaViewportElement>( '.embla' );
 
 				if ( ! viewport ) {
 					// eslint-disable-next-line no-console
@@ -222,8 +266,8 @@ store( 'rt-carousel/carousel', {
 					return;
 				}
 
-				const queryLoopContainer = viewport.querySelector(
-					'.wp-block-post-template',
+				const dynamicListContainer = viewport.querySelector<HTMLElement>(
+					DYNAMIC_LIST_CONTAINER_SELECTOR,
 				);
 
 				const startEmbla = () => {
@@ -234,12 +278,6 @@ store( 'rt-carousel/carousel', {
 					)
 						? ( rawOptions.align as 'start' | 'center' | 'end' )
 						: 'start';
-
-					const containScroll = [ 'trimSnaps', 'keepSnaps', '' ].includes(
-						rawOptions.containScroll as string,
-					)
-						? ( rawOptions.containScroll as 'trimSnaps' | 'keepSnaps' | '' )
-						: 'trimSnaps';
 
 					const direction = [ 'ltr', 'rtl' ].includes(
 						rawOptions.direction as string,
@@ -260,10 +298,10 @@ store( 'rt-carousel/carousel', {
 					const options: EmblaOptionsType = {
 						...rawOptions,
 						align,
-						containScroll,
+						containScroll: normalizeContainScroll( rawOptions.containScroll ),
 						direction,
 						slidesToScroll,
-						container: queryLoopContainer || null,
+						container: dynamicListContainer || null,
 					};
 
 					const plugins = [];
@@ -272,11 +310,7 @@ store( 'rt-carousel/carousel', {
 						plugins.push( Autoplay( context.autoplay as AutoplayOptionsType ) );
 					}
 
-					const embla = EmblaCarousel(
-						viewport as HTMLElement,
-						options,
-						plugins,
-					);
+					const embla = EmblaCarousel( viewport, options, plugins );
 
 					emblaInstances.set( viewport, embla );
 					viewport[ EMBLA_KEY ] = embla;
@@ -347,7 +381,7 @@ store( 'rt-carousel/carousel', {
 				if ( 'IntersectionObserver' in window ) {
 					intersectionObserver = new IntersectionObserver(
 						( entries ) => {
-							if ( entries[ 0 ].isIntersecting ) {
+							if ( entries[ 0 ]?.isIntersecting ) {
 								init();
 								intersectionObserver?.disconnect();
 								intersectionObserver = undefined;

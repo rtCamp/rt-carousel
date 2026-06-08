@@ -18,6 +18,7 @@ phpstan.neon
 # Test output
 /tests/_output/*
 !/tests/_output/.gitkeep
+coverage/
 
 # OS files
 [Tt]humbs.db

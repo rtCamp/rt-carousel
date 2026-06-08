@@ -436,6 +436,26 @@ describe( 'Carousel View Module', () => {
 
 				expect( result ).toBe( true );
 			} );
+
+			it( 'should work with Terms Query terms (.wp-block-term)', () => {
+				const container = document.createElement( 'div' );
+
+				const term1 = document.createElement( 'li' );
+				term1.className = 'wp-block-term';
+				const term2 = document.createElement( 'li' );
+				term2.className = 'wp-block-term';
+
+				container.appendChild( term1 );
+				container.appendChild( term2 );
+
+				const mockContext = createMockContext( { selectedIndex: 1, initialized: true } );
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+				( getElement as jest.Mock ).mockReturnValue( { ref: term2 } );
+
+				const result = storeConfig.callbacks.isSlideActive();
+
+				expect( result ).toBe( true );
+			} );
 		} );
 
 		describe( 'isDotActive', () => {
@@ -586,6 +606,56 @@ describe( 'Carousel View Module', () => {
 			} );
 		} );
 
+		describe( 'carousel count callbacks', () => {
+			it( 'should return 1-based current count', () => {
+				const mockContext = createMockContext( { selectedIndex: 2 } );
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+
+				const result = storeConfig.callbacks.getCurrentCount();
+
+				expect( result ).toBe( '3' );
+			} );
+
+			it( 'should use scroll snap length for total count', () => {
+				const mockContext = createMockContext( {
+					scrollSnaps: [ { index: 0 }, { index: 1 } ],
+					slideCount: 6,
+				} );
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+
+				const result = storeConfig.callbacks.getTotalCount();
+
+				expect( result ).toBe( '2' );
+			} );
+
+			it( 'should return accessible count label', () => {
+				const mockContext = createMockContext( {
+					selectedIndex: 1,
+					scrollSnaps: [ { index: 0 }, { index: 1 }, { index: 2 } ],
+					countLabelPattern: 'Slide {{currentSlide}} of {{totalSlides}}',
+				} );
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+
+				const result = storeConfig.callbacks.getCountLabel();
+
+				expect( result ).toBe( 'Slide 2 of 3' );
+			} );
+
+			it( 'should replace repeated placeholders in count label', () => {
+				const mockContext = createMockContext( {
+					selectedIndex: 1,
+					scrollSnaps: [ { index: 0 }, { index: 1 }, { index: 2 } ],
+					countLabelPattern:
+						'Slide {{currentSlide}} of {{totalSlides}} ({{currentSlide}}/{{totalSlides}})',
+				} );
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+
+				const result = storeConfig.callbacks.getCountLabel();
+
+				expect( result ).toBe( 'Slide 2 of 3 (2/3)' );
+			} );
+		} );
+
 		describe( 'getProgressBarStyle', () => {
 			it( 'should return display:none when slideCount is 0', () => {
 				const mockContext = createMockContext( { slideCount: 0 } );
@@ -699,7 +769,8 @@ describe( 'Carousel View Module', () => {
 
 			it( 'should update announcement after a manual slide change', () => {
 				const mockContext = createMockContext( {
-					announcementPattern: 'Slide {{currentSlide}} of {{totalSlides}}',
+					announcementPattern:
+						'Slide {{currentSlide}} of {{totalSlides}} ({{currentSlide}}/{{totalSlides}})',
 					selectedIndex: -1,
 				} );
 				const { wrapper, viewport } = createMockCarouselDOM();
@@ -750,7 +821,7 @@ describe( 'Carousel View Module', () => {
 					mockContext.shouldAnnounce = true;
 					listeners.select?.();
 
-					expect( mockContext.announcement ).toBe( 'Slide 2 of 5' );
+					expect( mockContext.announcement ).toBe( 'Slide 2 of 5 (2/5)' );
 					expect( mockContext.shouldAnnounce ).toBe( false );
 				} finally {
 					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
