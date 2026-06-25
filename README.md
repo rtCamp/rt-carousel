@@ -1,4 +1,4 @@
-# rtCarousel
+# rtCarousel – Flexible Carousel & Slider Block for Images, Videos, Testimonials & More
 
 ![rtCarousel banner](wp-assets/banner-1544x500.png)
 
