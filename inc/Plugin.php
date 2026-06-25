@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace Rt_Carousel;
 
 use Rt_Carousel\Traits\Singleton;
+use WP_Block;
+use WP_HTML_Tag_Processor;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -41,6 +43,7 @@ class Plugin {
 		add_action( 'init', [ $this, 'register_block_patterns' ] );
 		add_action( 'admin_notices', [ $this, 'legacy_plugin_notice' ] );
 		add_action( 'network_admin_notices', [ $this, 'legacy_plugin_notice' ] );
+		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'handle_lazy_load_images' ], 16, 3 );
 	}
 
 	/**
@@ -260,5 +263,58 @@ class Plugin {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Add loading="lazy" to images in carousel slides.
+	 *
+	 * @param string    $block_content The block content.
+	 * @param array     $parsed_block  The parsed block.
+	 * @param \WP_Block $instance      The block instance.
+	 *
+	 * @return string Modified block content.
+	 */
+	public function handle_lazy_load_images( string $block_content, array $parsed_block, WP_Block $instance ): string {
+		// $instance was added in WP 5.9.0, if it's not available, return the block content unmodified.
+		if ( ! $instance ) {
+			return $block_content;
+		}
+
+		// Bail early if the lazyLoadImages setting is not set.
+		if ( ! isset( $instance->attributes['lazyLoadImages'] ) ) {
+			return $block_content;
+		}
+
+		$lazy_load = (bool) $instance->attributes['lazyLoadImages'];
+
+		// If lazy loading is disabled, return as-is.
+		if ( ! $lazy_load ) {
+			return $block_content;
+		}
+
+		// Use WP_HTML_Tag_Processor to add loading="lazy" to <img> tags.
+		$processor = new WP_HTML_Tag_Processor( $block_content );
+		$slide_index = 0;
+
+		while ( $processor->next_tag(  ) ) {
+			$tag = $processor->get_tag();
+
+			// Keep a track of the slide index to determine if an image is in the first slide or subsequent slides.
+			if ( 'DIV' === $tag && $processor->has_class( 'embla__slide' ) ) {
+				$slide_index++;
+			}
+
+			// If it's the first slide, set loading="lazy". For subsequent slides, set loading="eager" and fetchpriority="high".
+			if ( 'IMG' === $tag && null === $processor->get_attribute( 'loading' ) ) {
+				if ( 1 === $slide_index ) {
+					$processor->set_attribute( 'loading', 'eager' );
+					$processor->set_attribute( 'fetchpriority', 'high' );
+				} else {
+					$processor->set_attribute( 'loading', 'lazy' );
+				}
+			}
+		}
+
+		return $processor->get_updated_html();
 	}
 }
