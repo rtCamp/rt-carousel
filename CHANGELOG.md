@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.3](https://github.com/rtCamp/rt-carousel/compare/2.0.2...2.0.3) (2026-06-24)
+
+
+### Maintenance
+
+* update plugin display name to a more descriptive title for discoverability
+
+
 ## [2.0.2](https://github.com/rtCamp/rt-carousel/compare/2.0.1...2.0.2) (2026-06-08)
 
 

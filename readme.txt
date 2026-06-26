@@ -1,10 +1,10 @@
-=== rtCarousel ===
+=== rtCarousel – Flexible Carousel & Slider Block for Images, Videos, Testimonials & More ===
 Contributors: rtcamp, iamdanih17, immasud, gagan0123, up1512001, mi5t4n, aviral89, vishal4669, imrraaj, aishwarryapande
 Tags: carousel, slider, block, interactivity-api, embla
 Requires at least: 6.6
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 2.0.2
+Stable tag: 2.0.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,10 @@ rtCarousel is the successor to Carousel Kit. Simply install and activate rtCarou
 1. Carousel block in the editor with multiple slides
 
 == Changelog ==
+
+= 2.0.3 =
+* Tweak: Update plugin display name to a more descriptive title for discoverability.
+
 
 = 2.0.2 =
 * New: Carousel Counter block with an accessible current/total slide indicator
