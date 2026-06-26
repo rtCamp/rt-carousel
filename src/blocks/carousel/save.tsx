@@ -22,6 +22,12 @@ export default function Save( {
 		axis,
 		height,
 		slidesToScroll,
+		autoScroll,
+		autoScrollSpeed,
+		autoScrollDirection,
+		autoScrollStartDelay,
+		autoScrollStopOnInteraction,
+		autoScrollStopOnMouseEnter,
 	} = attributes;
 
 	// Pass configuration to the frontend via data-wp-context
@@ -64,6 +70,15 @@ export default function Save( {
 			'Slide {{currentSlide}} of {{totalSlides}}',
 			'rt-carousel',
 		),
+		autoScroll: autoScroll ? {
+			speed: autoScrollSpeed,
+			direction: autoScrollDirection,
+			startDelay: autoScrollStartDelay,
+			stopOnInteraction: autoScrollStopOnInteraction,
+			stopOnMouseEnter: autoScrollStopOnMouseEnter,
+			stopOnFocusIn: true,
+		}
+		: false,
 	};
 
 	const blockProps = useBlockProps.save( {

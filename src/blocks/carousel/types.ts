@@ -18,6 +18,12 @@ export type CarouselAttributes = {
 	ariaLabel: string;
 	slideGap: number;
 	slidesToScroll: string;
+	autoScroll: boolean;
+	autoScrollSpeed: number;
+	autoScrollDirection: 'forward' | 'backward';
+	autoScrollStartDelay: number;
+	autoScrollStopOnInteraction: boolean;
+	autoScrollStopOnMouseEnter: boolean;
 };
 
 export type CarouselViewportAttributes = Record<string, never>;
@@ -65,4 +71,12 @@ export type CarouselContext = {
 	ref?: HTMLElement | null;
 	slideCount: number;
 	initialized?: boolean;
+	autoScroll: boolean | {
+		speed: number;
+		direction: 'forward' | 'backward';
+		startDelay: number;
+		stopOnInteraction: boolean;
+		stopOnMouseEnter: boolean;
+		stopOnFocusIn: boolean;
+	};
 };

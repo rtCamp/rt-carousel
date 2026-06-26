@@ -68,6 +68,7 @@ const createMockContext = (
 	scrollProgress: 0,
 	slideCount: 3,
 	ariaLabelPattern: 'Go to slide %d',
+	autoScroll: false,
 	...overrides,
 } );
 
@@ -1009,5 +1010,35 @@ describe( 'Edge Cases and Error Handling', () => {
 
 		expect( mockContext.scrollSnaps ).toHaveLength( 100 );
 		expect( mockContext.selectedIndex ).toBe( 50 );
+	} );
+
+	it( 'should handle autoScroll configuration', () => {
+		const mockContextWithAutoScroll = createMockContext( {
+			autoScroll: {
+				speed: 3,
+				direction: 'forward',
+				startDelay: 500,
+				stopOnInteraction: false,
+				stopOnMouseEnter: true,
+				stopOnFocusIn: false,
+			},
+		} );
+
+		expect( mockContextWithAutoScroll.autoScroll ).toEqual( {
+			speed: 3,
+			direction: 'forward',
+			startDelay: 500,
+			stopOnInteraction: false,
+			stopOnMouseEnter: true,
+			stopOnFocusIn: false,
+		} );
+	} );
+
+	it( 'should handle autoScroll disabled', () => {
+		const mockContext = createMockContext( {
+			autoScroll: false,
+		} );
+
+		expect( mockContext.autoScroll ).toBe( false );
 	} );
 } );

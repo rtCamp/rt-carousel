@@ -54,6 +54,12 @@ export default function Edit( {
 		autoplayStopOnMouseEnter,
 		ariaLabel,
 		slidesToScroll = '1',
+		autoScroll,
+		autoScrollSpeed,
+		autoScrollDirection,
+		autoScrollStartDelay,
+		autoScrollStopOnInteraction,
+		autoScrollStopOnMouseEnter
 	} = attributes;
 
 	const [ emblaApi, setEmblaApi ] = useState<EmblaCarouselType | undefined>();
@@ -314,11 +320,11 @@ export default function Edit( {
 					<ToggleControl
 						label={ __( 'Loop', 'rt-carousel' ) }
 						checked={ loop }
+						disabled={ autoScrollDirection === 'backward' }
 						onChange={ ( value ) => setAttributes( { loop: value } ) }
-						help={ __(
-							'Enables infinite scrolling of slides.',
-							'rt-carousel',
-						) }
+						help={ autoScrollDirection === 'backward' 
+								? __( 'Loop is required for backward auto scroll.', 'rt-carousel' )
+								: __( 'Enables infinite scrolling of slides.', 'rt-carousel' ) }
 					/>
 					<ToggleControl
 						label={ __( 'Free Drag', 'rt-carousel' ) }
@@ -421,7 +427,12 @@ export default function Edit( {
 					<ToggleControl
 						label={ __( 'Enable Autoplay', 'rt-carousel' ) }
 						checked={ autoplay }
-						onChange={ ( value ) => setAttributes( { autoplay: value } ) }
+						onChange={ ( value ) => {
+							setAttributes( { 
+								autoplay: value,
+								autoScroll: value ? false : autoScroll,
+							 } ) 
+						}}
 					/>
 					{ autoplay && (
 						<>
@@ -459,6 +470,70 @@ export default function Edit( {
 							/>
 						</>
 					) }
+				</PanelBody>
+				<PanelBody
+					title={ __( 'Auto Scroll', 'rt-carousel' ) }
+					initialOpen={ false }
+				>
+				<ToggleControl
+					label={ __( 'Enable Auto Scroll', 'rt-carousel' ) }
+					checked={ autoScroll }
+					onChange={ ( value ) => setAttributes( {
+						autoScroll: value,
+						autoplay: value ? false : autoplay,
+					} ) }
+				/>
+				{ autoScroll && ( <> 
+					<RangeControl
+						label={ __( 'Speed', 'rt-carousel' ) }
+						value={ autoScrollSpeed }
+						onChange={ ( value ) =>
+							setAttributes( { autoScrollSpeed: value ?? 2 } )
+						}
+						min={ 1 }
+						max={ 10 }
+					/>
+					<SelectControl
+						label={ __( 'Direction', 'rt-carousel' ) }
+						value={ autoScrollDirection }
+						options={ [
+							{ label: __( 'Forward', 'rt-carousel' ), value: 'forward' },
+							{ label: __( 'Backward', 'rt-carousel' ), value: 'backward' },
+						] }
+						onChange={ ( value ) =>
+							setAttributes( { 
+								autoScrollDirection: value as  CarouselAttributes['autoScrollDirection'],
+								loop: value === 'backward' ? true : loop,
+							} )
+						}
+					/>
+					<RangeControl
+						label={ __( 'Start Delay (ms)', 'rt-carousel' ) }
+						value={ autoScrollStartDelay }
+						onChange={ ( value ) =>
+							setAttributes( { autoScrollStartDelay: value ?? 1000 } )
+						}
+						min={ 0 }
+						max={ 10000 }
+						step={ 100 }
+					/>
+					<ToggleControl
+						label={ __( 'Stop on Interaction', 'rt-carousel' ) }
+						checked={ autoScrollStopOnInteraction }
+						onChange={ ( value ) =>
+							setAttributes( { autoScrollStopOnInteraction: value } )
+						}
+						help={ __( 'Stop auto scroll when user interacts with carousel.', 'rt-carousel' ) }
+					/>
+					<ToggleControl
+						label={ __( 'Stop on Mouse Enter', 'rt-carousel' ) }
+						checked={ autoScrollStopOnMouseEnter }
+						onChange={ ( value ) =>
+							setAttributes( { autoScrollStopOnMouseEnter: value } )
+						}
+						help={ __( 'Stop auto scroll when mouse hovers over carousel.', 'rt-carousel' ) }
+					/>
+				 </> ) }
 				</PanelBody>
 			</InspectorControls>
 			<InspectorAdvancedControls>

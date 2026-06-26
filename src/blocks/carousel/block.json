@@ -85,6 +85,31 @@
 		"slidesToScroll": {
 			"type": "string",
 			"default": "1"
+		},
+		"autoScroll": {
+			"type": "boolean",
+			"default": false
+		},
+		"autoScrollSpeed": {
+			"type": "number",
+			"default": 2
+		},
+		"autoScrollDirection": {
+			"type": "string",
+			"default": "ltr",
+			"enum": ["forward", "backward"]
+		},
+		"autoScrollStartDelay": {
+			"type": "number",
+			"default": 1000
+		},
+		"autoScrollStopOnInteraction": {
+			"type": "boolean",
+			"default": true
+		},
+		"autoScrollStopOnMouseEnter": {
+			"type": "boolean",
+			"default": false
 		}
 	},
 	"editorScript": "file:./index.js",
