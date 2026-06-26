@@ -5,6 +5,54 @@ This block uses the **WordPress Interactivity API** to manage state and logic. Y
 ## Store Namespace
 `rt-carousel/carousel`
 
+## Embla Initialization Filters
+
+rtCarousel exposes JavaScript filters immediately before calling `EmblaCarousel( viewport, options, plugins )`, allowing runtime customization without changing saved block markup.
+
+```js
+import { addFilter } from '@wordpress/hooks';
+import AutoHeight from 'embla-carousel-auto-height';
+
+addFilter(
+    'rtcamp.rtCarousel.emblaOptions',
+    'my-plugin/custom-options',
+    ( options ) => ( { ...options, duration: 40 } )
+);
+
+addFilter(
+    'rtcamp.rtCarousel.emblaPlugins',
+    'my-plugin/auto-height',
+    ( plugins ) => [ ...plugins, AutoHeight() ]
+);
+```
+
+Both filter callbacks receive the filtered value as their first argument and the filter context object as their second argument. `rtcamp.rtCarousel.emblaPlugins` also receives the filtered options on the `options` property of this object.
+
+rtCarousel also exposes an action after Embla has initialized so integrations can call Embla methods or subscribe to Embla events:
+
+```js
+import { addAction } from '@wordpress/hooks';
+
+addAction(
+    'rtcamp.rtCarousel.emblaInit',
+    'my-plugin/custom-events',
+    ( embla, { root } ) => {
+        embla.on( 'select', () => {
+            root.dataset.selectedSlide = embla.selectedScrollSnap().toString();
+        } );
+    }
+);
+```
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `context` | `CarouselContext` | Interactivity API context for the carousel. |
+| `root` | `HTMLElement` | Root `.rt-carousel` element. |
+| `viewport` | `HTMLElement` | Embla viewport element. |
+| `dynamicListContainer` | `HTMLElement \| null` | Query Loop or Terms Query template container when present. |
+| `options` | `EmblaOptionsType` | Passed to `rtcamp.rtCarousel.emblaPlugins` and `rtcamp.rtCarousel.emblaInit`; contains filtered options. |
+| `plugins` | `EmblaPluginType[]` | Only passed to `rtcamp.rtCarousel.emblaInit`; contains filtered plugins. |
+
 ## Context (`CarouselContext`)
 
 The following properties are exposed in the Interactivity API context:

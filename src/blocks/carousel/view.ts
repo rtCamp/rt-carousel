@@ -2,6 +2,7 @@ import { store, getContext, getElement } from '@wordpress/interactivity';
 import EmblaCarousel, {
 	type EmblaOptionsType,
 	type EmblaCarouselType,
+	type EmblaPluginType,
 } from 'embla-carousel';
 import Autoplay, { type AutoplayOptionsType } from 'embla-carousel-autoplay';
 import type { CarouselContext } from './types';
@@ -22,6 +23,58 @@ type EmblaViewportElement = HTMLElement & {
 };
 
 export const emblaInstances = new WeakMap<HTMLElement, EmblaCarouselType>();
+
+type EmblaFilterContext = {
+	context: CarouselContext;
+	root: HTMLElement;
+	viewport: HTMLElement;
+	dynamicListContainer: HTMLElement | null;
+	options?: EmblaOptionsType;
+};
+
+type HooksWindow = Window & {
+	wp?: {
+		hooks?: {
+			applyFilters?: (
+				hookName: string,
+				value: unknown,
+				...args: unknown[]
+			) => unknown;
+			doAction?: ( hookName: string, ...args: unknown[] ) => void;
+		};
+	};
+};
+
+const applyEmblaFilter = <T>(
+	hookName: string,
+	value: T,
+	filterContext: EmblaFilterContext,
+): T => {
+	const applyFilters = ( window as HooksWindow ).wp?.hooks?.applyFilters;
+
+	if ( typeof applyFilters !== 'function' ) {
+		return value;
+	}
+
+	const result = applyFilters( hookName, value, filterContext );
+	return result !== null && result !== undefined ? ( result as T ) : value;
+};
+
+const doEmblaAction = (
+	hookName: string,
+	embla: EmblaCarouselType,
+	filterContext: EmblaFilterContext & {
+		plugins: EmblaPluginType[];
+	},
+): void => {
+	const doAction = ( window as HooksWindow ).wp?.hooks?.doAction;
+
+	if ( typeof doAction !== 'function' ) {
+		return;
+	}
+
+	doAction( hookName, embla, filterContext );
+};
 
 const getElementRef = ( rawElement: unknown ): HTMLElement | null => {
 	if ( rawElement instanceof HTMLElement ) {
@@ -304,13 +357,35 @@ store( 'rt-carousel/carousel', {
 						container: dynamicListContainer || null,
 					};
 
-					const plugins = [];
+					const plugins: EmblaPluginType[] = [];
 
 					if ( context.autoplay ) {
 						plugins.push( Autoplay( context.autoplay as AutoplayOptionsType ) );
 					}
 
-					const embla = EmblaCarousel( viewport, options, plugins );
+					const filterContext: EmblaFilterContext = {
+						context,
+						root: element,
+						viewport,
+						dynamicListContainer,
+					};
+
+					const filteredOptions = applyEmblaFilter(
+						'rtcamp.rtCarousel.emblaOptions',
+						options,
+						filterContext,
+					);
+
+					const filteredPlugins = applyEmblaFilter(
+						'rtcamp.rtCarousel.emblaPlugins',
+						plugins,
+						{ ...filterContext, options: filteredOptions },
+					);
+					const safePlugins = Array.isArray( filteredPlugins )
+						? filteredPlugins
+						: plugins;
+
+					const embla = EmblaCarousel( viewport, filteredOptions, safePlugins );
 
 					emblaInstances.set( viewport, embla );
 					viewport[ EMBLA_KEY ] = embla;
@@ -348,6 +423,15 @@ store( 'rt-carousel/carousel', {
 					} );
 
 					updateState();
+					doEmblaAction(
+						'rtcamp.rtCarousel.emblaInit',
+						embla,
+						{
+							...filterContext,
+							options: filteredOptions,
+							plugins: safePlugins,
+						},
+					);
 
 					return () => {
 						embla.destroy();
