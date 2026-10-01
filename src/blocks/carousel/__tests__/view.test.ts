@@ -1313,6 +1313,62 @@ describe( 'Carousel View Module', () => {
 						originalIntersectionObserver;
 				}
 			} );
+
+			it( 'sets isPlaying when auto scroll plays and stops', () => {
+				const mockContext = createMockContext( {
+					autoScroll: {
+						speed: 2,
+						direction: 'forward',
+						startDelay: 1000,
+						stopOnInteraction: true,
+						stopOnMouseEnter: false,
+						stopOnFocusIn: true,
+					},
+				} );
+				const { wrapper, viewport } = createMockCarouselDOM();
+				const originalIntersectionObserver = window.IntersectionObserver;
+				const mockEmbla = createMockEmblaInstance( {
+					scrollProgress: jest.fn( () => 0 ),
+					slideNodes: jest.fn( () => [] ),
+				} );
+
+				viewport.getBoundingClientRect = jest.fn( () => ( {
+					width: 100,
+					height: 0,
+					top: 0,
+					right: 0,
+					bottom: 0,
+					left: 0,
+					x: 0,
+					y: 0,
+					toJSON: () => ( {} ),
+				} ) );
+
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+				( getElement as jest.Mock ).mockReturnValue( { ref: wrapper } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue( mockEmbla );
+				delete ( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver;
+
+				try {
+					storeConfig.callbacks.initCarousel();
+
+					const getHandler = ( eventName: string ) =>
+						mockEmbla.on.mock.calls.find(
+							( [ name ] ) => name === eventName,
+						)?.[ 1 ];
+
+					expect( mockContext.isPlaying ).toBe( false );
+
+					getHandler( 'autoScroll:play' )?.();
+					expect( mockContext.isPlaying ).toBe( true );
+
+					getHandler( 'autoScroll:stop' )?.();
+					expect( mockContext.isPlaying ).toBe( false );
+				} finally {
+					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
+						originalIntersectionObserver;
+				}
+			} );
 		} );
 	} );
 } );

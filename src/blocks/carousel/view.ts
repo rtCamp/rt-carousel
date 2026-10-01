@@ -471,6 +471,14 @@ store( 'rt-carousel/carousel', {
 						context.isPlaying = false;
 					} );
 
+					embla.on( 'autoScroll:play', () => {
+						context.isPlaying = true;
+					} );
+
+					embla.on( 'autoScroll:stop', () => {
+						context.isPlaying = false;
+					} );
+
 					updateState();
 
 					return () => {

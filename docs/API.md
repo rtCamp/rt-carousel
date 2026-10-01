@@ -12,7 +12,7 @@ The following properties are exposed in the Interactivity API context:
 | Property           | Type       | Description                                                                                          |
 | :----------------- | :--------- | :--------------------------------------------------------------------------------------------------- |
 | `transition`       | `'slide'` or `'fade'` | The active transition style; determines whether the Fade plugin is loaded.               |
-| `isPlaying`        | `boolean`  | `true` if Autoplay is currently running.                                                             |
+| `isPlaying`        | `boolean`  | `true` if Autoplay or Auto Scroll is currently running.                                              |
 | `timerIterationId` | `number`   | Increments every time the Autoplay timer resets (slide change). Bind to `key` to restart animations. |
 | `autoplay`         | `boolean` or `{ delay, ... }` | Autoplay config or `false` if disabled. |
 | `canScrollPrev`    | `boolean`  | `true` if there are previous slides (or looping).                                                    |
