@@ -285,7 +285,14 @@ store( 'rt-carousel/carousel', {
 			const { snap } = context as CarouselContext & {
 				snap?: { index?: number };
 			};
-			return context.selectedIndex === snap?.index;
+			if ( typeof snap?.index !== 'number' ) {
+				return false;
+			}
+			const selectedIndex =
+				typeof context.selectedIndex === 'number' && context.selectedIndex >= 0
+					? context.selectedIndex
+					: 0;
+			return selectedIndex === snap.index;
 		},
 		getDotLabel: () => {
 			const context = getContext<CarouselContext>();

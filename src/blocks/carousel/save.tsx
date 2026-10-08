@@ -56,7 +56,7 @@ export default function Save( {
 			: false,
 		isPlaying: !! autoplay, // Initially true if autoplay is enabled
 		timerIterationId: 0,
-		selectedIndex: -1,
+		selectedIndex: 0,
 		scrollSnaps: [],
 		canScrollPrev: false,
 		canScrollNext: false,

@@ -94,8 +94,17 @@ store( 'rt-carousel/carousel', {
 		 * inactive tabs are focusable only via arrow keys (tabindex=-1). */
 		getTabTabIndex: (): string => {
 			const context = getContext< TabContext >();
-			const isActive = context.selectedIndex === context.snap?.index;
+			const snapIndex = context.snap?.index;
+			if ( typeof snapIndex !== 'number' ) {
+				return '-1';
+			}
+			const selectedIndex =
+				typeof context.selectedIndex === 'number' && context.selectedIndex >= 0
+					? context.selectedIndex
+					: 0;
+			const isActive = selectedIndex === snapIndex;
 			return isActive ? '0' : '-1';
 		},
 	},
 } as CarouselStore );
+
