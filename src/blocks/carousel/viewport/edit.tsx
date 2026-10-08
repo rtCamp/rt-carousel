@@ -188,8 +188,16 @@ export default function Edit( {
 		}
 		const id = requestAnimationFrame( () => {
 			const api = emblaApiRef.current;
-			if ( api && api.selectedScrollSnap() !== selectedSlideIndex ) {
-				api.scrollTo( selectedSlideIndex );
+			if ( ! api ) {
+				return;
+			}
+			// scrollTo()/selectedScrollSnap() use snap indexes; with slidesToScroll > 1
+			// one snap holds several slides, so map the slide to its snap first.
+			const snapIndex = api
+				.internalEngine()
+				.slideRegistry.findIndex( ( slides ) => slides.includes( selectedSlideIndex ) );
+			if ( snapIndex > -1 && api.selectedScrollSnap() !== snapIndex ) {
+				api.scrollTo( snapIndex );
 			}
 		} );
 		return () => cancelAnimationFrame( id );
