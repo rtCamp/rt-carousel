@@ -83,6 +83,9 @@ Gutenberg's `InnerBlocks` can isolate React Contexts, causing state sync issues 
 2. **Find**: Child components (Controls/Dots) attempt to find the API via Context first. If missing, they traverse the DOM up to the common wrapper (`.rt-carousel`) and then search for the sibling `.embla` viewport.
 3. **Bind**: A retry mechanism (`setTimeout` + `useEffect`) ensures the Viewport has finished initializing before binding listeners.
 
+### Reduced Motion
+When the visitor requests reduced motion (`prefers-reduced-motion: reduce`), slide changes are instant and Autoplay / Auto Scroll do not start. This is applied through Embla `breakpoints`, so it also follows changes to the setting while the page is open.
+
 ### Dots Implementation
 The Carousel Dots block demonstrates a pattern for iterating over data with the Interactivity API:
 1. **Data Source**: `context.scrollSnaps` is populated in `view.ts` by mapping Embla's snap list to objects: `[{ index: 0 }, { index: 1 }, ...]`.

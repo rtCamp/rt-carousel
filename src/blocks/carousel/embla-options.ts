@@ -38,3 +38,29 @@ export const applyTransitionOverrides = (
 		slidesToScroll: 1,
 	};
 };
+
+export const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
+type WithBreakpoints = { breakpoints?: Record<string, object> };
+
+/**
+ * Embla applies `breakpoints` at runtime, including when the visitor changes the setting.
+ *
+ * @param {Object} options   Embla core or plugin options.
+ * @param {Object} overrides Options to use when reduced motion is requested.
+ */
+export const withReducedMotion = <T extends WithBreakpoints>(
+	options: T,
+	overrides: NonNullable<T[ 'breakpoints' ]>[ string ],
+): T => {
+	return {
+		...options,
+		breakpoints: {
+			...options.breakpoints,
+			[ REDUCED_MOTION_QUERY ]: {
+				...options.breakpoints?.[ REDUCED_MOTION_QUERY ],
+				...overrides,
+			},
+		},
+	};
+};

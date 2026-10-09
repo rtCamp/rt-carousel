@@ -17,7 +17,11 @@ import EmblaCarousel, { type EmblaCarouselType, type EmblaPluginType } from 'emb
 import Fade from 'embla-carousel-fade';
 import { useCarouselObservers } from '../hooks/useCarouselObservers';
 import { DYNAMIC_LIST_CONTAINER_SELECTOR } from '../dynamic-list-selectors';
-import { normalizeContainScroll, applyTransitionOverrides } from '../embla-options';
+import {
+	normalizeContainScroll,
+	applyTransitionOverrides,
+	withReducedMotion,
+} from '../embla-options';
 
 const EMBLA_KEY = Symbol.for( 'carousel-system.carousel' );
 
@@ -220,22 +224,25 @@ export default function Edit( {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const options = carouselOptions as any;
 
-			const emblaOptions = applyTransitionOverrides(
-				{
-					loop: options?.loop ?? false,
-					dragFree: options?.dragFree ?? false,
-					containScroll: normalizeContainScroll( options?.containScroll ),
-					axis: options?.axis || 'x',
-					align: options?.align || 'start',
-					direction: options?.direction || 'ltr',
-					slidesToScroll: options?.slidesToScroll || 1,
-					duration: options?.duration,
-					container: dynamicListContainer || undefined,
-					watchDrag: false, // Clicks in slide gaps must not trigger Embla scroll in the editor.
-					watchSlides: false, // Gutenberg injects block UI nodes into .embla__container; Embla's built-in MutationObserver would call reInit() on those, corrupting slide order and transforms.
-					watchResize: false, // Replaced by a manual debounced ResizeObserver in useCarouselObservers.
-				},
-				options?.transition || 'slide',
+			const emblaOptions = withReducedMotion(
+				applyTransitionOverrides(
+					{
+						loop: options?.loop ?? false,
+						dragFree: options?.dragFree ?? false,
+						containScroll: normalizeContainScroll( options?.containScroll ),
+						axis: options?.axis || 'x',
+						align: options?.align || 'start',
+						direction: options?.direction || 'ltr',
+						slidesToScroll: options?.slidesToScroll || 1,
+						duration: options?.duration,
+						container: dynamicListContainer || undefined,
+						watchDrag: false, // Clicks in slide gaps must not trigger Embla scroll in the editor.
+						watchSlides: false, // Gutenberg injects block UI nodes into .embla__container; Embla's built-in MutationObserver would call reInit() on those, corrupting slide order and transforms.
+						watchResize: false, // Replaced by a manual debounced ResizeObserver in useCarouselObservers.
+					},
+					options?.transition || 'slide',
+				),
+				{ duration: 0 },
 			);
 
 			const plugins: EmblaPluginType[] = options?.transition === 'fade' ? [ Fade() ] : [];

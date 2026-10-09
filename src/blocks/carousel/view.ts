@@ -12,7 +12,11 @@ import {
 	DYNAMIC_LIST_CONTAINER_SELECTOR,
 	CAROUSEL_SLIDE_SELECTOR,
 } from './dynamic-list-selectors';
-import { normalizeContainScroll, applyTransitionOverrides } from './embla-options';
+import {
+	normalizeContainScroll,
+	applyTransitionOverrides,
+	withReducedMotion,
+} from './embla-options';
 
 type ElementWithRef = {
 	ref?: HTMLElement | null;
@@ -408,16 +412,19 @@ store( 'rt-carousel/carousel', {
 						slidesToScroll = rawOptions.slidesToScroll;
 					}
 
-					const options: EmblaOptionsType = applyTransitionOverrides(
-						{
-							...rawOptions,
-							align,
-							containScroll: normalizeContainScroll( rawOptions.containScroll ),
-							direction,
-							slidesToScroll,
-							container: dynamicListContainer || null,
-						},
-						context.transition,
+					const options: EmblaOptionsType = withReducedMotion(
+						applyTransitionOverrides(
+							{
+								...rawOptions,
+								align,
+								containScroll: normalizeContainScroll( rawOptions.containScroll ),
+								direction,
+								slidesToScroll,
+								container: dynamicListContainer || null,
+							},
+							context.transition,
+						),
+						{ duration: 0 },
 					);
 
 					const plugins = [];
@@ -427,11 +434,25 @@ store( 'rt-carousel/carousel', {
 					}
 
 					if ( context.autoplay ) {
-						plugins.push( Autoplay( context.autoplay as AutoplayOptionsType ) );
+						plugins.push(
+							Autoplay(
+								withReducedMotion( context.autoplay as AutoplayOptionsType, {
+									playOnInit: false,
+									stopOnInteraction: true,
+								} ),
+							),
+						);
 					}
 
 					if ( context.autoScroll ) {
-						plugins.push( AutoScroll( context.autoScroll as AutoScrollOptionsType ) );
+						plugins.push(
+							AutoScroll(
+								withReducedMotion( context.autoScroll as AutoScrollOptionsType, {
+									playOnInit: false,
+									stopOnInteraction: true,
+								} ),
+							),
+						);
 					}
 
 					const embla = EmblaCarousel( viewport, options, plugins );
@@ -479,11 +500,10 @@ store( 'rt-carousel/carousel', {
 						context.isPlaying = false;
 					} );
 
-					// Auto Scroll emits its first `autoScroll:play` while Embla is
-					// being created, before the listener above is attached.
-					if ( embla.plugins?.()?.autoScroll?.isPlaying() ) {
-						context.isPlaying = true;
-					}
+					// Autoplay and Auto Scroll start while Embla is being created,
+					// before the listeners above are attached.
+					const { autoplay, autoScroll } = embla.plugins?.() ?? {};
+					context.isPlaying = !! ( autoplay?.isPlaying() || autoScroll?.isPlaying() );
 
 					updateState();
 
