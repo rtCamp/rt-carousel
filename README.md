@@ -18,7 +18,7 @@ Easily create dynamic, accessible, and customizable carousels for any content ty
 - **High Performance**: Viewport & Slide Engine powered by Embla Carousel.
 - **Interactivity API**: Reactive state management with `data-wp-interactive`.
 - **Dynamic Content**: Full support for WordPress **Query Loop** and **Terms Query** blocks.
-- **Accessibility**: W3C-compliant roles, labels, and keyboard navigation.
+- **Accessibility**: W3C-compliant roles, labels, keyboard navigation, and reduced-motion support.
 - **RTL Support**: Built-in support for Right-to-Left languages.
 
 ## Documentation
@@ -85,7 +85,7 @@ Do not place Query Loop or Terms Query inside a Carousel Slide block. Their gene
 
 ### Is it accessible?
 
-Yes. The carousel follows W3C accessibility guidelines with proper ARIA roles, labels, and full keyboard navigation support.
+Yes. The carousel follows W3C accessibility guidelines with proper ARIA roles, labels, and full keyboard navigation support. It also respects the reduced-motion setting: slides change without animation and Autoplay / Auto Scroll do not start.
 
 ### Can I have multiple carousels on the same page?
 
