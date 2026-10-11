@@ -33,6 +33,7 @@ class PluginTest extends UnitTestCase {
 	 */
 	private const EXPECTED_BLOCKS = [
 		'carousel',
+		'carousel/carousel-tab-list',
 		'carousel/controls',
 		'carousel/counter',
 		'carousel/dots',
@@ -64,6 +65,18 @@ class PluginTest extends UnitTestCase {
 		$method     = $reflection->getMethod( $methodName );
 
 		return $method->invokeArgs( $object, $args );
+	}
+
+	/**
+	 * Shared slide markup.
+	 *
+	 * @return string
+	 */
+	private function slideMarkup(): string {
+		return '<div class="embla__slide" role="group" aria-roledescription="slide"'
+			. ' data-wp-interactive="rt-carousel/carousel"'
+			. ' data-wp-class--is-active="callbacks.isSlideActive"'
+			. ' data-wp-bind--aria-current="callbacks.isSlideActive"><p>A</p></div>';
 	}
 
 	/**
@@ -151,7 +164,7 @@ class PluginTest extends UnitTestCase {
 		$instance = $this->getPluginInstance();
 		$this->invokeMethod( $instance, 'register_blocks' );
 
-		$this->assertCount( 7, $registered_blocks );
+		$this->assertCount( count( self::EXPECTED_BLOCKS ), $registered_blocks );
 
 		// Verify each expected block is registered
 		foreach ( self::EXPECTED_BLOCKS as $block ) {
@@ -174,7 +187,7 @@ class PluginTest extends UnitTestCase {
 	public function test_register_blocks_handles_missing_build_path(): void {
 		// The actual behavior check: register_block_type should be called
 		// for each block when the constant is defined (as it is in our tests).
-		Functions\expect( 'register_block_type' )->times( 7 );
+		Functions\expect( 'register_block_type' )->times( count( self::EXPECTED_BLOCKS ) );
 
 		$instance = $this->getPluginInstance();
 		$this->invokeMethod( $instance, 'register_blocks' );
@@ -694,5 +707,226 @@ class PluginTest extends UnitTestCase {
 		$this->assertStringContainsString( 'data-wp-class--is-active="callbacks.myOwn"', $result );
 		$this->assertSame( 1, substr_count( $result, 'data-wp-interactive="rt-carousel/carousel"' ) );
 		$this->assertSame( 1, substr_count( $result, 'data-wp-bind--aria-current="callbacks.isSlideActive"' ) );
+	}
+
+	/**
+	 * Test that mark_tab_panels leaves a carousel that is not in tabs mode alone.
+	 *
+	 * @return void
+	 */
+	public function test_mark_tab_panels_returns_unmodified_without_use_tabs(): void {
+		$instance = $this->getPluginInstance();
+		$content  = $this->slideMarkup();
+
+		$this->assertSame( $content, $instance->mark_tab_panels( $content, [] ) );
+		$this->assertSame( $content, $instance->mark_tab_panels( $content, [ 'attrs' => [ 'useTabs' => false ] ] ) );
+	}
+
+	/**
+	 * Test that mark_tab_panels swaps the slide role and ARIA directives in tabs mode.
+	 *
+	 * @return void
+	 */
+	public function test_mark_tab_panels_promotes_slides_to_tab_panels(): void {
+		$instance = $this->getPluginInstance();
+
+		$result = $instance->mark_tab_panels( $this->slideMarkup(), [ 'attrs' => [ 'useTabs' => true ] ] );
+
+		$this->assertStringContainsString( 'role="tabpanel"', $result );
+		$this->assertStringContainsString( 'data-wp-bind--id="callbacks.getSlideTabPanelId"', $result );
+		$this->assertStringContainsString( 'data-wp-bind--aria-labelledby="callbacks.getSlideTabLabelledBy"', $result );
+		$this->assertStringContainsString( 'data-wp-class--is-active="callbacks.isSlideActive"', $result );
+		// APG: a panel must be reachable even with nothing focusable inside it.
+		$this->assertStringContainsString( 'tabindex="0"', $result );
+		$this->assertStringNotContainsString( 'aria-roledescription', $result );
+		$this->assertStringNotContainsString( 'data-wp-bind--aria-current', $result );
+	}
+
+	/**
+	 * Test that mark_tab_panels only touches slides.
+	 *
+	 * @return void
+	 */
+	public function test_mark_tab_panels_ignores_non_slide_markup(): void {
+		$instance = $this->getPluginInstance();
+		$content  = $this->slideMarkup()
+			. '<div class="embla__container" role="group" aria-roledescription="carousel"></div>'
+			. '<button role="tab" class="wp-block-rt-carousel-carousel-tab-list__tab"></button>';
+
+		$result = $instance->mark_tab_panels( $content, [ 'attrs' => [ 'useTabs' => true ] ] );
+
+		$this->assertSame( 1, substr_count( $result, 'role="tabpanel"' ) );
+		$this->assertStringContainsString( '<div class="embla__container" role="group" aria-roledescription="carousel">', $result );
+		$this->assertStringContainsString( '<button role="tab"', $result );
+	}
+
+	/**
+	 * Test that mark_tab_panels only promotes the slides this tablist owns.
+	 *
+	 * @return void
+	 */
+	public function test_mark_tab_panels_only_promotes_owned_slides(): void {
+		$cases = [
+			'query loop inside a panel'   => [
+				'<div class="embla__container">'
+				. '<div class="embla__slide"><ul class="wp-block-post-template"><li class="wp-block-post">A</li><li class="wp-block-post">B</li></ul></div>'
+				. '<div class="embla__slide"><p>x</p></div>'
+				. '</div>',
+				2,
+			],
+			'loose post list in a panel'  => [
+				'<div class="embla__container">'
+				. '<div class="embla__slide"><ul><li class="wp-block-post">A</li></ul></div>'
+				. '<div class="embla__slide"><p>x</p></div>'
+				. '</div>',
+				2,
+			],
+			'carousel inside a loop item' => [
+				'<ul class="wp-block-post-template">'
+				. '<li class="wp-block-post"><div class="embla__container"><div class="embla__slide">inner</div></div></li>'
+				. '<li class="wp-block-post">B</li>'
+				. '</ul>',
+				2,
+			],
+			'slides at uneven depths'     => [
+				'<div class="embla__container">'
+				. '<div class="wrap"><div class="embla__slide"><p>1</p></div></div>'
+				. '<div class="embla__slide"><p>2</p></div>'
+				. '<div class="embla__slide"><p>3</p></div>'
+				. '</div>',
+				3,
+			],
+		];
+
+		$instance = $this->getPluginInstance();
+
+		foreach ( $cases as $label => list( $content, $expected ) ) {
+			$result = $instance->mark_tab_panels( $content, [ 'attrs' => [ 'useTabs' => true ] ] );
+
+			$this->assertSame( $expected, substr_count( $result, 'role="tabpanel"' ), $label );
+		}
+	}
+
+	/**
+	 * Test that mark_tab_panels leaves a nested carousel's own slides alone.
+	 *
+	 * @return void
+	 */
+	public function test_mark_tab_panels_skips_nested_carousel_slides(): void {
+		$instance = $this->getPluginInstance();
+		$content  = '<div class="embla__container">'
+			. '<div class="embla__slide" role="group" aria-roledescription="slide" data-wp-bind--aria-current="callbacks.isSlideActive">'
+			. '<div class="rt-carousel"><div class="embla__container">'
+			. '<div class="embla__slide" role="group" aria-roledescription="slide" data-wp-bind--aria-current="callbacks.isSlideActive"><p>Inner</p></div>'
+			. '</div></div>'
+			. '</div></div>';
+
+		$result = $instance->mark_tab_panels( $content, [ 'attrs' => [ 'useTabs' => true ] ] );
+
+		$this->assertSame( 1, substr_count( $result, 'role="tabpanel"' ) );
+		// The inner carousel keeps the slide semantics its own tablist-less runtime expects.
+		$this->assertSame( 1, substr_count( $result, 'aria-roledescription="slide"' ) );
+		$this->assertSame( 1, substr_count( $result, 'data-wp-bind--aria-current="callbacks.isSlideActive"' ) );
+	}
+
+	/**
+	 * Test that mark_tab_panels promotes Query Loop and Terms Query items too.
+	 *
+	 * @return void
+	 */
+	public function test_mark_tab_panels_promotes_query_loop_items(): void {
+		$instance = $this->getPluginInstance();
+		// As mark_query_loop_slides leaves them, running earlier on the same hook.
+		$content = '<ul class="wp-block-post-template">'
+			. '<li class="wp-block-post" data-wp-interactive="rt-carousel/carousel" data-wp-class--is-active="callbacks.isSlideActive" data-wp-bind--aria-current="callbacks.isSlideActive">A</li>'
+			. '</ul>'
+			. '<ul class="wp-block-term-template">'
+			. '<li class="wp-block-term" data-wp-interactive="rt-carousel/carousel" data-wp-bind--aria-current="callbacks.isSlideActive">B</li>'
+			. '</ul>';
+
+		$result = $instance->mark_tab_panels( $content, [ 'attrs' => [ 'useTabs' => true ] ] );
+
+		$this->assertSame( 2, substr_count( $result, 'role="tabpanel"' ) );
+		$this->assertSame( 2, substr_count( $result, 'data-wp-bind--id="callbacks.getSlideTabPanelId"' ) );
+		$this->assertSame( 2, substr_count( $result, 'data-wp-bind--aria-labelledby="callbacks.getSlideTabLabelledBy"' ) );
+		$this->assertStringNotContainsString( 'data-wp-bind--aria-current', $result );
+	}
+
+	/**
+	 * Test that a Query Loop nested inside a slide keeps its own items untouched.
+	 *
+	 * @return void
+	 */
+	public function test_mark_tab_panels_skips_nested_query_loop_items(): void {
+		$instance = $this->getPluginInstance();
+		$content  = '<ul class="wp-block-post-template">'
+			. '<li class="wp-block-post" data-wp-bind--aria-current="callbacks.isSlideActive">A'
+			. '<ul class="wp-block-post-template"><li class="wp-block-post" data-wp-bind--aria-current="callbacks.isSlideActive">Nested</li></ul>'
+			. '</li></ul>';
+
+		$result = $instance->mark_tab_panels( $content, [ 'attrs' => [ 'useTabs' => true ] ] );
+
+		$this->assertSame( 1, substr_count( $result, 'role="tabpanel"' ) );
+		$this->assertSame( 1, substr_count( $result, 'data-wp-bind--aria-current="callbacks.isSlideActive"' ) );
+	}
+
+	/**
+	 * Test that the render filters are actually registered.
+	 *
+	 * @return void
+	 */
+	public function test_setup_hooks_registers_render_filters(): void {
+		$instance = $this->getPluginInstance();
+
+		Filters\expectAdded( 'render_block_rt-carousel/carousel' )
+			->once()
+			->with( [ $instance, 'handle_block_markup' ], 10, 2 );
+
+		Filters\expectAdded( 'render_block_rt-carousel/carousel' )
+			->once()
+			->with( [ $instance, 'handle_lazy_load_images' ], 16, 3 );
+
+		$this->invokeMethod( $instance, 'setup_hooks' );
+
+		$this->assertTrue( true );
+	}
+
+	/**
+	 * Test that the repair steps run in the order tabs mode depends on.
+	 *
+	 * Promoting to tab panels before marking loop slides would let
+	 * mark_query_loop_slides() re-add the aria-current that tabs mode strips.
+	 *
+	 * @return void
+	 */
+	public function test_handle_block_markup_orders_repairs_for_tabs_mode(): void {
+		$instance = $this->getPluginInstance();
+		// A Query Loop carousel as the loop renders it — no carousel directives yet.
+		$content = '<div class="embla__container"><ul class="wp-block-post-template">'
+			. '<li class="wp-block-post">A</li>'
+			. '</ul></div>';
+
+		$result = $instance->handle_block_markup( $content, [ 'attrs' => [ 'useTabs' => true ] ] );
+
+		$this->assertStringContainsString( 'data-wp-interactive="rt-carousel/carousel"', $result );
+		$this->assertStringContainsString( 'data-wp-class--is-active="callbacks.isSlideActive"', $result );
+		$this->assertStringContainsString( 'role="tabpanel"', $result );
+		$this->assertStringContainsString( 'data-wp-bind--aria-labelledby="callbacks.getSlideTabLabelledBy"', $result );
+		$this->assertStringNotContainsString( 'aria-current', $result );
+	}
+
+	/**
+	 * Test that a carousel that is not in tabs mode still gets its loop slides marked.
+	 *
+	 * @return void
+	 */
+	public function test_handle_block_markup_marks_loop_slides_without_tabs(): void {
+		$instance = $this->getPluginInstance();
+		$content  = '<ul class="wp-block-post-template"><li class="wp-block-post">A</li></ul>';
+
+		$result = $instance->handle_block_markup( $content, [] );
+
+		$this->assertStringContainsString( 'data-wp-bind--aria-current="callbacks.isSlideActive"', $result );
+		$this->assertStringNotContainsString( 'role="tabpanel"', $result );
 	}
 }

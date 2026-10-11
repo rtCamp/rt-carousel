@@ -11,10 +11,9 @@ registerBlockType( metadata as BlockConfiguration<CarouselSlideAttributes>, {
 	save: Save,
 	__experimentalLabel: (
 		_attrs: unknown,
-		{ context }: { context?: Record< string, unknown > },
-	) => {
-		return context?.[ 'rt-carousel/carousel/useTabs' ]
-			? __( 'Tab Panel', 'rt-carousel' )
-			: undefined;
-	},
+		{ context }: { context?: string },
+	) =>
+		context === 'appender'
+			? __( 'Add carousel slide', 'rt-carousel' )
+			: undefined,
 } );
