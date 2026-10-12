@@ -53,14 +53,13 @@ export const withReducedMotion = <T extends WithBreakpoints>(
 	options: T,
 	overrides: NonNullable<T[ 'breakpoints' ]>[ string ],
 ): T => {
+	const { [ REDUCED_MOTION_QUERY ]: existing, ...others } = options.breakpoints ?? {};
+
 	return {
 		...options,
 		breakpoints: {
-			...options.breakpoints,
-			[ REDUCED_MOTION_QUERY ]: {
-				...options.breakpoints?.[ REDUCED_MOTION_QUERY ],
-				...overrides,
-			},
+			...others,
+			[ REDUCED_MOTION_QUERY ]: { ...existing, ...overrides },
 		},
 	};
 };

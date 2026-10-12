@@ -36,6 +36,20 @@ describe( 'withReducedMotion', () => {
 		} );
 	} );
 
+	it( 'puts the reduced-motion entry last so it wins', () => {
+		const result = withReducedMotion(
+			{
+				breakpoints: {
+					[ REDUCED_MOTION_QUERY ]: { loop: false },
+					'(min-width: 768px)': { duration: 25 },
+				},
+			},
+			{ duration: 0 },
+		);
+
+		expect( Object.keys( result.breakpoints ?? {} ).at( -1 ) ).toBe( REDUCED_MOTION_QUERY );
+	} );
+
 	it( 'does not mutate its input', () => {
 		const input = { breakpoints: { '(min-width: 768px)': { loop: true } } };
 
