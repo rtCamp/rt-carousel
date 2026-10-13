@@ -17,6 +17,7 @@ import { store, getContext, getElement } from '@wordpress/interactivity';
 import EmblaCarousel, { type EmblaCarouselType } from 'embla-carousel';
 import Fade from 'embla-carousel-fade';
 import AutoScroll from 'embla-carousel-auto-scroll';
+import Autoplay from 'embla-carousel-autoplay';
 
 // Symbol key used by the view.ts for Embla instances
 const EMBLA_KEY = Symbol.for( 'rt-carousel.carousel' );
@@ -1416,6 +1417,164 @@ describe( 'Carousel View Module', () => {
 					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
 						originalIntersectionObserver;
 				}
+			} );
+
+			describe( 'reduced motion', () => {
+				const reducedMotionQuery = '(prefers-reduced-motion: reduce)';
+				const originalIntersectionObserver = window.IntersectionObserver;
+				const originalMatchMedia = window.matchMedia;
+
+				const initWithContext = (
+					overrides: Partial<CarouselContext>,
+					emblaOverrides = {},
+				) => {
+					const mockContext = createMockContext( overrides );
+					const { wrapper, viewport } = createMockCarouselDOM();
+
+					viewport.getBoundingClientRect = jest.fn( () => ( {
+						width: 100,
+						height: 0,
+						top: 0,
+						right: 0,
+						bottom: 0,
+						left: 0,
+						x: 0,
+						y: 0,
+						toJSON: () => ( {} ),
+					} ) );
+
+					( getContext as jest.Mock ).mockReturnValue( mockContext );
+					( getElement as jest.Mock ).mockReturnValue( { ref: wrapper } );
+					( EmblaCarousel as unknown as jest.Mock ).mockReturnValue(
+						createMockEmblaInstance( {
+							scrollProgress: jest.fn( () => 0 ),
+							slideNodes: jest.fn( () => [] ),
+							...emblaOverrides,
+						} ),
+					);
+
+					storeConfig.callbacks.initCarousel();
+
+					return mockContext;
+				};
+
+				const mockReducedMotion = ( matches: boolean ) => {
+					window.matchMedia = jest.fn( ( query: string ) => ( {
+						matches: matches && query === reducedMotionQuery,
+					} ) ) as unknown as typeof window.matchMedia;
+				};
+
+				beforeEach( () => {
+					delete ( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver;
+				} );
+
+				afterEach( () => {
+					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
+						originalIntersectionObserver;
+					window.matchMedia = originalMatchMedia;
+				} );
+
+				it( 'adds a breakpoint that removes the slide animation', () => {
+					initWithContext( { options: { loop: true } } );
+
+					const lastCall = ( EmblaCarousel as unknown as jest.Mock ).mock.calls.at( -1 );
+					expect( lastCall?.[ 1 ].breakpoints ).toEqual( {
+						[ reducedMotionQuery ]: { duration: 0 },
+					} );
+				} );
+
+				it( 'stops Autoplay playing on init under reduced motion', () => {
+					initWithContext( {
+						autoplay: {
+							delay: 4000,
+							stopOnInteraction: false,
+							stopOnMouseEnter: false,
+						},
+						isPlaying: true,
+					} );
+
+					expect( ( Autoplay as unknown as jest.Mock ).mock.calls.at( -1 )?.[ 0 ] ).toEqual( {
+						delay: 4000,
+						stopOnInteraction: false,
+						stopOnMouseEnter: false,
+						breakpoints: {
+							[ reducedMotionQuery ]: { playOnInit: false },
+						},
+					} );
+				} );
+
+				it( 'stops Auto Scroll playing on init under reduced motion', () => {
+					initWithContext( {
+						autoScroll: {
+							speed: 2,
+							direction: 'forward',
+							startDelay: 1000,
+							stopOnInteraction: true,
+							stopOnMouseEnter: false,
+							stopOnFocusIn: true,
+						},
+					} );
+
+					expect(
+						( AutoScroll as unknown as jest.Mock ).mock.calls.at( -1 )?.[ 0 ].breakpoints,
+					).toEqual( {
+						[ reducedMotionQuery ]: { playOnInit: false },
+					} );
+				} );
+
+				it( 'passes empty Autoplay options when autoplay is true', () => {
+					initWithContext( { autoplay: true } );
+
+					expect( ( Autoplay as unknown as jest.Mock ).mock.calls.at( -1 )?.[ 0 ] ).toEqual( {
+						breakpoints: {
+							[ reducedMotionQuery ]: { playOnInit: false },
+						},
+					} );
+				} );
+
+				it( 'marks the carousel as not playing when Autoplay did not start', () => {
+					mockReducedMotion( true );
+
+					const mockContext = initWithContext(
+						{
+							autoplay: {
+								delay: 4000,
+								stopOnInteraction: false,
+								stopOnMouseEnter: false,
+							},
+							isPlaying: true,
+						},
+						{
+							plugins: jest.fn( () => ( {
+								autoplay: { isPlaying: jest.fn( () => false ) },
+							} ) ),
+						},
+					);
+
+					expect( mockContext.isPlaying ).toBe( false );
+				} );
+
+				it( 'keeps the saved playing state without reduced motion', () => {
+					mockReducedMotion( false );
+
+					const mockContext = initWithContext(
+						{
+							autoplay: {
+								delay: 4000,
+								stopOnInteraction: false,
+								stopOnMouseEnter: false,
+							},
+							isPlaying: true,
+						},
+						{
+							plugins: jest.fn( () => ( {
+								autoplay: { isPlaying: jest.fn( () => false ) },
+							} ) ),
+						},
+					);
+
+					expect( mockContext.isPlaying ).toBe( true );
+				} );
 			} );
 		} );
 	} );

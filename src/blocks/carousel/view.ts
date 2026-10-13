@@ -20,6 +20,10 @@ type ElementWithRef = {
 
 const EMBLA_KEY = Symbol.for( 'rt-carousel.carousel' );
 
+// Embla applies breakpoints itself, including when the visitor changes
+// the setting while the page is open.
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
 type EmblaViewportElement = HTMLElement & {
 	[EMBLA_KEY]?: EmblaCarouselType;
 };
@@ -416,9 +420,15 @@ store( 'rt-carousel/carousel', {
 							direction,
 							slidesToScroll,
 							container: dynamicListContainer || null,
+							breakpoints: { [ REDUCED_MOTION_QUERY ]: { duration: 0 } },
 						},
 						context.transition,
 					);
+
+					// Autoplay and Auto Scroll can still be started from a play button.
+					const reducedMotionPluginBreakpoints = {
+						[ REDUCED_MOTION_QUERY ]: { playOnInit: false },
+					};
 
 					const plugins = [];
 
@@ -427,11 +437,21 @@ store( 'rt-carousel/carousel', {
 					}
 
 					if ( context.autoplay ) {
-						plugins.push( Autoplay( context.autoplay as AutoplayOptionsType ) );
+						plugins.push(
+							Autoplay( {
+								...( context.autoplay as AutoplayOptionsType ),
+								breakpoints: reducedMotionPluginBreakpoints,
+							} ),
+						);
 					}
 
 					if ( context.autoScroll ) {
-						plugins.push( AutoScroll( context.autoScroll as AutoScrollOptionsType ) );
+						plugins.push(
+							AutoScroll( {
+								...( context.autoScroll as AutoScrollOptionsType ),
+								breakpoints: reducedMotionPluginBreakpoints,
+							} ),
+						);
 					}
 
 					const embla = EmblaCarousel( viewport, options, plugins );
@@ -483,6 +503,15 @@ store( 'rt-carousel/carousel', {
 					// being created, before the listener above is attached.
 					if ( embla.plugins?.()?.autoScroll?.isPlaying() ) {
 						context.isPlaying = true;
+					}
+
+					// The saved markup assumes Autoplay starts on load, which it
+					// does not when the visitor prefers reduced motion.
+					if ( window.matchMedia?.( REDUCED_MOTION_QUERY ).matches ) {
+						const { autoplay, autoScroll } = embla.plugins?.() ?? {};
+						context.isPlaying = !! (
+							autoplay?.isPlaying() || autoScroll?.isPlaying()
+						);
 					}
 
 					updateState();
