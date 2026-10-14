@@ -19,6 +19,7 @@ export type CarouselAttributes = {
 	ariaLabel: string;
 	slideGap: number;
 	slidesToScroll: string;
+	slidesPerView: number;
 	lazyLoadImages: boolean;
 	autoScroll: boolean;
 	autoScrollSpeed: number;

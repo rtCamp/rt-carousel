@@ -2,6 +2,7 @@ import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { __ } from '@wordpress/i18n';
 import type { CarouselAttributes, CarouselContext } from './types';
 import { encodeContext } from './encode-context';
+import { getSlidesPerView } from './embla-options';
 
 export default function Save( {
 	attributes,
@@ -32,6 +33,7 @@ export default function Save( {
 		autoScrollStopOnInteraction,
 		autoScrollStopOnMouseEnter,
 	} = attributes;
+	const slidesPerView = getSlidesPerView( attributes );
 
 	// Pass configuration to the frontend via data-wp-context
 	const context: CarouselContext = {
@@ -104,6 +106,7 @@ export default function Save( {
 		style: {
 			'--rt-carousel-gap': `${ slideGap }px`,
 			'--rt-carousel-height': axis === 'y' ? height : undefined,
+			'--rt-carousel-slides-per-view': slidesPerView,
 		} as React.CSSProperties,
 	} );
 

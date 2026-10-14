@@ -27,6 +27,7 @@ import { EditorCarouselContext } from './editor-context';
 import type { EmblaCarouselType } from 'embla-carousel';
 import { getSlideTemplates, type SlideTemplate } from './templates';
 import TemplatePicker from './components/TemplatePicker';
+import { getSlidesPerView, MIN_SLIDES_PER_VIEW, MAX_SLIDES_PER_VIEW } from './embla-options';
 
 type SetupStep = 'slide-count' | 'template';
 
@@ -173,6 +174,8 @@ export default function Edit( {
 
 	const suggestions = blockTypes?.map( ( block ) => block.name ) || [];
 
+	const slidesPerView = getSlidesPerView( attributes );
+
 	const blockProps = useBlockProps( {
 		className: 'rt-carousel',
 		dir: direction,
@@ -182,6 +185,7 @@ export default function Edit( {
 		style: {
 			'--rt-carousel-gap': `${ attributes.slideGap }px`,
 			'--rt-carousel-height': axis === 'y' ? height : undefined,
+			'--rt-carousel-slides-per-view': slidesPerView,
 		} as React.CSSProperties,
 	} );
 
@@ -523,6 +527,21 @@ export default function Edit( {
 									}
 									help={ __(
 										'Prevents excess scrolling at the beginning or end.',
+										'rt-carousel',
+									) }
+								/>
+							) }
+							{ transition !== 'fade' && (
+								<RangeControl
+									label={ __( 'Slides per View', 'rt-carousel' ) }
+									value={ attributes.slidesPerView }
+									onChange={ ( value ) =>
+										setAttributes( { slidesPerView: value ?? MIN_SLIDES_PER_VIEW } )
+									}
+									min={ MIN_SLIDES_PER_VIEW }
+									max={ MAX_SLIDES_PER_VIEW }
+									help={ __(
+										'Number of slides visible at once. Overrides the column block styles and Post/Terms Template grid columns.',
 										'rt-carousel',
 									) }
 								/>

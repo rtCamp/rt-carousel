@@ -1,4 +1,8 @@
 import type { EmblaOptionsType } from 'embla-carousel';
+import type { CarouselAttributes } from './types';
+
+export const MIN_SLIDES_PER_VIEW = 1;
+export const MAX_SLIDES_PER_VIEW = 6;
 
 export const normalizeContainScroll = (
 	value: unknown,
@@ -37,4 +41,23 @@ export const applyTransitionOverrides = (
 		dragFree: false,
 		slidesToScroll: 1,
 	};
+};
+
+/**
+ * Effective "Slides per view" count as a CSS-ready string, or undefined when the
+ * carousel should keep its default width rules (block styles / template columns).
+ * Fade and tabs stack every slide in the same place, so they always show one.
+ *
+ * @param {CarouselAttributes} attributes Carousel block attributes.
+ */
+export const getSlidesPerView = (
+	attributes: Pick<CarouselAttributes, 'slidesPerView' | 'transition' | 'useTabs'>,
+): string | undefined => {
+	const { slidesPerView, transition, useTabs } = attributes;
+
+	if ( useTabs || transition === 'fade' || slidesPerView <= MIN_SLIDES_PER_VIEW ) {
+		return undefined;
+	}
+
+	return String( Math.min( Math.floor( slidesPerView ), MAX_SLIDES_PER_VIEW ) );
 };
