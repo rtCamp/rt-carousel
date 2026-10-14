@@ -24,6 +24,7 @@ The parent block acts as the controller and wrapper. It handles configuration, s
 | `axis`                      | string  | `'x'`         | Carousel axis direction (`'x'` for horizontal, `'y'` for vertical). |
 | `direction`                 | string  | `'ltr'`       | Carousel item direction: `'ltr'` (left-to-right) or `'rtl'` (right-to-left). |
 | `slidesToScroll`            | number  | `1`           | Number of slides to scroll per navigation action. |
+| `slidesPerView`             | number  | `1`           | Number of slides visible at once (1–6). Gap-aware, and overrides the column block styles and Post/Terms Template grid columns. Ignored for the `'fade'` transition and in tabs mode. |
 | `lazyLoadImages`            | boolean | `true`        | Add `loading="lazy"` to images in slides after the first (the first slide's images are always `eager` for LCP). |
 
 ---
