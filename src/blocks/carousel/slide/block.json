@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"version": "1.0.0",
+	"name": "rt-carousel/carousel-slide",
+	"title": "Carousel Slide",
+	"category": "rt-carousel",
+	"icon": "slides",
+	"parent": [
+		"rt-carousel/carousel-viewport"
+	],
+	"description": "A single slide within the carousel.",
+	"textdomain": "rt-carousel",
+	"attributes": {
+		"verticalAlignment": {
+			"type": "string"
+		}
+	},
+	"usesContext": [
+		"rt-carousel/carousel/allowedSlideBlocks",
+		"rt-carousel/carousel/useTabs"
+	],
+	"editorScript": "file:./index.js"
+}

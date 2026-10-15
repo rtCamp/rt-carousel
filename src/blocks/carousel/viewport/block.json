@@ -1,0 +1,21 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"version": "1.0.0",
+	"name": "rt-carousel/carousel-viewport",
+	"title": "Carousel Viewport",
+	"category": "rt-carousel",
+	"icon": "cover-image",
+	"parent": [
+		"rt-carousel/carousel",
+		"core/column",
+		"core/group"
+	],
+	"description": "Viewport container for carousel slides.",
+	"textdomain": "rt-carousel",
+	"attributes": {},
+	"supports": {
+		"interactivity": true
+	},
+	"editorScript": "file:./index.js"
+}

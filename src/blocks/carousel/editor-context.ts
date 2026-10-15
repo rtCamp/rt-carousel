@@ -1,0 +1,51 @@
+import { createContext } from '@wordpress/element';
+import type { EmblaCarouselType } from 'embla-carousel';
+import type { CarouselAttributes } from './types';
+
+export type EditorCarouselContextType = {
+	emblaApi: EmblaCarouselType | undefined;
+	setEmblaApi: ( api: EmblaCarouselType ) => void;
+	canScrollPrev: boolean;
+	canScrollNext: boolean;
+	setCanScrollPrev: ( value: boolean ) => void;
+	setCanScrollNext: ( value: boolean ) => void;
+	scrollProgress: number;
+	setScrollProgress: ( value: number ) => void;
+	selectedIndex: number;
+	setSelectedIndex: ( index: number ) => void;
+	scrollSnaps: number[];
+	slideCount: number;
+	useTabs?: boolean;
+	autoScroll?: boolean;
+	carouselOptions: Omit<Partial<CarouselAttributes>, 'slidesToScroll'> & {
+		slidesToScroll?: number | string;
+		duration?: number;
+	};
+};
+
+// Use a global singleton to ensure all block bundles share the same Context reference
+const defaultValue: EditorCarouselContextType = {
+	emblaApi: undefined,
+	setEmblaApi: () => {},
+	canScrollPrev: false,
+	canScrollNext: false,
+	setCanScrollPrev: () => {},
+	setCanScrollNext: () => {},
+	scrollProgress: 0,
+	setScrollProgress: () => {},
+	selectedIndex: 0,
+	setSelectedIndex: () => {},
+	scrollSnaps: [],
+	slideCount: 0,
+	useTabs: false,
+	autoScroll: false,
+	carouselOptions: {},
+};
+
+let context = window.__RT_CAROUSEL_CONTEXT__;
+if ( ! context ) {
+	context = createContext<EditorCarouselContextType>( defaultValue );
+	window.__RT_CAROUSEL_CONTEXT__ = context;
+}
+
+export const EditorCarouselContext = context;

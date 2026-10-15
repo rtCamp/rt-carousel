@@ -1,0 +1,40 @@
+# Vendor + dependency files
+node_modules/
+vendor/
+
+# Enviroment
+.env
+.wp-env.override.json
+
+# Local configs
+phpcs.xml
+phpunit.xml
+phpstan.neon
+
+# Log files
+*.log
+/tests/logs
+
+# Test output
+/tests/_output/*
+!/tests/_output/.gitkeep
+coverage/
+
+# OS files
+[Tt]humbs.db
+[Dd]esktop.ini
+*.DS_store
+.DS_store?
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# Build
+build/
+tsconfig.tsbuildinfo
+rt-carousel.zip

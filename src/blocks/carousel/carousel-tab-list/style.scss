@@ -1,0 +1,69 @@
+.wp-block-rt-carousel-carousel-tab-list {
+	display: flex;
+	flex-wrap: wrap;
+
+	/* Colour defaults — overridden by inline style when user picks colours */
+	--rt-tab-active-bg: #000;
+	--rt-tab-active-color: #fff;
+	--rt-tab-inactive-bg: transparent;
+	--rt-tab-inactive-color: currentcolor;
+
+	/* Border defaults — overridden by inline style via supports.border */
+	--rt-tab-border-color: transparent;
+	--rt-tab-border-width: 1px;
+	--rt-tab-border-style: solid;
+	--rt-tab-border-radius: 0.25em;
+
+	/* Border is redirected from the container to individual tab buttons via
+	 * the --rt-tab-* CSS vars. Without this, supports.border would paint a
+	 * border around the tablist container (visually wrong — we want it on
+	 * each tab). */
+	/* stylelint-disable-next-line declaration-no-important */
+	border: none !important;
+
+	/* Hide the empty tablist before the Interactivity API hydrates <template>.
+	 * Without JS, the tablist renders no buttons and would be an empty region. */
+	&:empty {
+		display: none;
+	}
+
+	&__tab {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.5em 1em;
+		border: var(--rt-tab-border-width) var(--rt-tab-border-style) var(--rt-tab-border-color);
+		background: var(--rt-tab-inactive-bg);
+		color: var(--rt-tab-inactive-color);
+		cursor: pointer;
+		font: inherit;
+		border-radius: var(--rt-tab-border-radius);
+		transition:
+			background-color 0.2s ease,
+			color 0.2s ease,
+			opacity 0.2s ease;
+
+		&:focus-visible {
+
+			/* Visible by default (WCAG 2.4.7). Use currentColor unconditionally
+			 * because --rt-tab-border-color defaults to transparent. */
+			outline-color: currentcolor;
+			outline-style: solid;
+			outline-width: 2px;
+			outline-offset: 2px;
+		}
+
+		&.is-active,
+		&[aria-selected="true"] {
+			background-color: var(--rt-tab-active-bg);
+			color: var(--rt-tab-active-color);
+		}
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+	.wp-block-rt-carousel-carousel-tab-list__tab {
+		transition: none;
+	}
+}

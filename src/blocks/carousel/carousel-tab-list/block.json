@@ -1,0 +1,69 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"version": "1.0.0",
+	"name": "rt-carousel/carousel-tab-list",
+	"title": "Tab List",
+	"category": "rt-carousel",
+	"icon": "list-view",
+	"description": "Tab navigation for a carousel in tabs mode.",
+	"textdomain": "rt-carousel",
+	"parent": [
+		"rt-carousel/carousel",
+		"core/column",
+		"core/group"
+	],
+	"attributes": {
+		"labels": {
+			"type": "array",
+			"items": { "type": "string" },
+			"default": []
+		},
+		"activeTabBackgroundColor": {
+			"type": "string",
+			"default": ""
+		},
+		"activeTabTextColor": {
+			"type": "string",
+			"default": ""
+		},
+		"inactiveTabBackgroundColor": {
+			"type": "string",
+			"default": ""
+		},
+		"inactiveTabTextColor": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"interactivity": true,
+		"html": false,
+		"layout": {
+			"allowSwitching": false,
+			"allowInheriting": false,
+			"allowVerticalAlignment": false,
+			"default": {
+				"type": "flex",
+				"flexWrap": "wrap"
+			}
+		},
+		"spacing": {
+			"padding": true,
+			"margin": true,
+			"blockGap": true
+		},
+		"typography": {
+			"fontSize": true
+		},
+		"border": {
+			"color": true,
+			"width": true,
+			"style": true,
+			"radius": true
+		}
+	},
+	"editorScript": "file:./index.ts",
+	"style": "file:./style-index.css",
+	"viewScriptModule": "file:./view.ts"
+}

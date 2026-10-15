@@ -1,0 +1,132 @@
+import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
+import { __ } from '@wordpress/i18n';
+import type { CarouselAttributes, CarouselContext } from './types';
+import { encodeContext } from './encode-context';
+
+export default function Save( {
+	attributes,
+}: {
+	attributes: CarouselAttributes;
+} ) {
+	const {
+		transition,
+		loop,
+		dragFree,
+		carouselAlign,
+		containScroll,
+		direction,
+		autoplay,
+		autoplayDelay,
+		autoplayStopOnInteraction,
+		autoplayStopOnMouseEnter,
+		ariaLabel,
+		slideGap,
+		axis,
+		height,
+		slidesToScroll,
+		useTabs = false,
+		autoScroll,
+		autoScrollSpeed,
+		autoScrollDirection,
+		autoScrollStartDelay,
+		autoScrollStopOnInteraction,
+		autoScrollStopOnMouseEnter,
+	} = attributes;
+
+	// Pass configuration to the frontend via data-wp-context
+	const context: CarouselContext = {
+		transition,
+		options: {
+			loop,
+			dragFree,
+			align: carouselAlign,
+			containScroll,
+			direction,
+			axis,
+			slidesToScroll: slidesToScroll === 'auto' ? 'auto' : parseInt( slidesToScroll, 10 ),
+			// Instant switch in tabs mode — no scroll animation
+			...( useTabs ? { duration: 0 } : {} ),
+		},
+		autoplay: autoplay
+			? {
+				delay: autoplayDelay,
+				stopOnInteraction: autoplayStopOnInteraction,
+				stopOnMouseEnter: autoplayStopOnMouseEnter,
+			}
+			: false,
+		isPlaying: !! autoplay, // Initially true if autoplay is enabled
+		timerIterationId: 0,
+		selectedIndex: -1,
+		scrollSnaps: [],
+		canScrollPrev: false,
+		canScrollNext: false,
+		scrollProgress: 0,
+		slideCount: 0,
+		/* translators: %d: slide number */
+		ariaLabelPattern: __( 'Go to slide %d', 'rt-carousel' ),
+		/* translators: {{currentSlide}}: current slide number, {{totalSlides}}: total slide count. */
+		countLabelPattern: __(
+			'Slide {{currentSlide}} of {{totalSlides}}',
+			'rt-carousel',
+		),
+		announcement: '',
+		shouldAnnounce: false,
+		/* translators: {{currentSlide}}: current slide number, {{totalSlides}}: total slide count. */
+		announcementPattern: __(
+			'Slide {{currentSlide}} of {{totalSlides}}',
+			'rt-carousel',
+		),
+		autoScroll: autoScroll ? {
+			speed: autoScrollSpeed,
+			direction: autoScrollDirection,
+			startDelay: autoScrollStartDelay,
+			stopOnInteraction: autoScrollStopOnInteraction,
+			stopOnMouseEnter: autoScrollStopOnMouseEnter,
+			stopOnFocusIn: true,
+		}
+			: false,
+		useTabs,
+		carouselId: '', // Set at runtime by initCarousel in view.ts
+	};
+
+	const blockProps = useBlockProps.save( {
+		className: 'rt-carousel',
+		role: 'region',
+		...( ! useTabs ? { 'aria-roledescription': 'carousel' } : {} ),
+		'aria-label': ariaLabel,
+		dir: direction,
+		'data-axis': axis,
+		'data-loop': loop ? 'true' : undefined,
+		...( useTabs ? { 'data-is-tabs': 'true' } : {} ),
+		'data-wp-interactive': 'rt-carousel/carousel',
+		'data-wp-context': encodeContext( JSON.stringify( context ) ),
+		'data-wp-init': 'callbacks.initCarousel', // Use init for mounting
+		style: {
+			'--rt-carousel-gap': `${ slideGap }px`,
+			'--rt-carousel-height': axis === 'y' ? height : undefined,
+		} as React.CSSProperties,
+	} );
+
+	const innerBlocksProps = useInnerBlocksProps.save( blockProps ) as ReturnType<
+		typeof useInnerBlocksProps.save
+	> & {
+		children: React.ReactNode;
+	};
+	const { children, ...wrapperProps } = innerBlocksProps;
+	const announcementLiveRegion = (
+		<span
+			className="screen-reader-text"
+			role="status"
+			aria-live="polite"
+			aria-atomic="true"
+			data-wp-text="context.announcement"
+		/>
+	);
+
+	return (
+		<div { ...wrapperProps }>
+			{ children }
+			{ announcementLiveRegion }
+		</div>
+	);
+}

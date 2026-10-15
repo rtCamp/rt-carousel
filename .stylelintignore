@@ -1,0 +1,11 @@
+## Ignore build and dependency directories
+/build
+/coverage
+/node_modules
+/tests
+/vendor
+
+## Allow only CSS and SCSS files
+*.*
+!*.css
+!*.scss

@@ -1,0 +1,65 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": false,
+		"noEmit": true,
+
+		// Type checking.
+		"strict": true,
+		"allowSyntheticDefaultImports": true,
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"exactOptionalPropertyTypes": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"strictFunctionTypes": true,
+
+		// Modules
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+
+		// Interop Constraints
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"isolatedModules": true,
+		// @todo: make true when we can use `type: "module"` in package.json
+		"verbatimModuleSyntax": false,
+
+		// Language and Environment
+		"jsx": "react-jsx",
+		"lib": [ "ESNext","DOM.Iterable", "DOM" ],
+		"moduleDetection": "force",
+		"target": "ES2022",
+
+		// Projects
+		"disableSourceOfProjectReferenceRedirect": true,
+		"incremental": true,
+
+		// Completeness
+		"skipLibCheck": true,
+
+		// File config
+		"baseUrl": "./src",
+		"outDir": "./build",
+		"paths": {
+			"@/*": ["./*"],
+		}
+	},
+	"include": [
+		"src/**/*.ts",
+		"src/**/*.tsx",
+		"src/**/*.d.ts"
+	],
+	"exclude": [
+		"node_modules",
+		"build"
+	]
+}
