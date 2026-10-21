@@ -32,7 +32,9 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0.5em 1em;
-		border: var(--rt-tab-border-width) var(--rt-tab-border-style) var(--rt-tab-border-color);
+		border-width: var(--rt-tab-border-width);
+		border-style: var(--rt-tab-border-style);
+		border-color: var(--rt-tab-border-color);
 		background: var(--rt-tab-inactive-bg);
 		color: var(--rt-tab-inactive-color);
 		cursor: pointer;
@@ -45,11 +47,9 @@
 
 		&:focus-visible {
 
-			/* Visible by default (WCAG 2.4.7). Use currentColor unconditionally
-			 * because --rt-tab-border-color defaults to transparent. */
-			outline-color: currentcolor;
-			outline-style: solid;
-			outline-width: 2px;
+			/* Visible by default (WCAG 2.4.7). High contrast outline for keyboard
+			 * navigation. */
+			outline: 2px solid var(--wp-admin-theme-color, #007cba);
 			outline-offset: 2px;
 		}
 
@@ -61,9 +61,42 @@
 	}
 }
 
+@media (max-width: 1024px) {
+
+	.wp-block-rt-carousel-carousel-tab-list,
+	.wp-block-rt-carousel-carousel-tab-list.is-layout-flex {
+		max-width: 100%;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+		padding-bottom: 4px;
+
+		&::-webkit-scrollbar {
+			height: 4px;
+		}
+
+		&::-webkit-scrollbar-track {
+			background: transparent;
+		}
+
+		&::-webkit-scrollbar-thumb {
+			background-color: rgba(0, 0, 0, 0.2);
+			border-radius: 2px;
+		}
+
+		.wp-block-rt-carousel-carousel-tab-list__tab {
+			flex: 0 0 auto;
+			white-space: nowrap;
+		}
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 
 	.wp-block-rt-carousel-carousel-tab-list__tab {
 		transition: none;
 	}
 }
+

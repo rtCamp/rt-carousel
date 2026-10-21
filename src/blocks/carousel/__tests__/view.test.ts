@@ -1226,6 +1226,51 @@ describe( 'Carousel View Module', () => {
 				}
 			} );
 
+			it( 'keeps one snap per panel in tabs mode so resize does not collapse the tab list', () => {
+				const mockContext = createMockContext( {
+					useTabs: true,
+					options: { containScroll: 'trimSnaps', slidesToScroll: 'auto', dragFree: true },
+				} );
+				const { wrapper, viewport } = createMockCarouselDOM();
+				const originalIntersectionObserver = window.IntersectionObserver;
+
+				viewport.getBoundingClientRect = jest.fn( () => ( {
+					width: 100,
+					height: 0,
+					top: 0,
+					right: 0,
+					bottom: 0,
+					left: 0,
+					x: 0,
+					y: 0,
+					toJSON: () => ( {} ),
+				} ) );
+
+				( getContext as jest.Mock ).mockReturnValue( mockContext );
+				( getElement as jest.Mock ).mockReturnValue( { ref: wrapper } );
+				( EmblaCarousel as unknown as jest.Mock ).mockReturnValue(
+					createMockEmblaInstance( {
+						scrollProgress: jest.fn( () => 0 ),
+						slideNodes: jest.fn( () => [] ),
+					} ),
+				);
+				delete ( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver;
+
+				try {
+					storeConfig.callbacks.initCarousel();
+
+					const lastCall = ( EmblaCarousel as unknown as jest.Mock ).mock.calls.at( -1 );
+					expect( lastCall?.[ 1 ] ).toMatchObject( {
+						containScroll: false,
+						dragFree: false,
+						slidesToScroll: 1,
+					} );
+				} finally {
+					( window as Window & { IntersectionObserver?: typeof IntersectionObserver } ).IntersectionObserver =
+						originalIntersectionObserver;
+				}
+			} );
+
 			it( 'does not include the Fade plugin when transition is slide', () => {
 				const mockContext = createMockContext( { transition: 'slide' } );
 				const { wrapper, viewport } = createMockCarouselDOM();

@@ -17,7 +17,7 @@ import EmblaCarousel, { type EmblaCarouselType, type EmblaPluginType } from 'emb
 import Fade from 'embla-carousel-fade';
 import { useCarouselObservers } from '../hooks/useCarouselObservers';
 import { DYNAMIC_LIST_CONTAINER_SELECTOR } from '../dynamic-list-selectors';
-import { normalizeContainScroll, applyTransitionOverrides } from '../embla-options';
+import { normalizeContainScroll, applyTransitionOverrides, applyTabsOverrides } from '../embla-options';
 
 const EMBLA_KEY = Symbol.for( 'carousel-system.carousel' );
 
@@ -220,7 +220,7 @@ export default function Edit( {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const options = carouselOptions as any;
 
-			const emblaOptions = applyTransitionOverrides(
+			const emblaOptions = applyTabsOverrides( applyTransitionOverrides(
 				{
 					loop: options?.loop ?? false,
 					dragFree: options?.dragFree ?? false,
@@ -236,7 +236,7 @@ export default function Edit( {
 					watchResize: false, // Replaced by a manual debounced ResizeObserver in useCarouselObservers.
 				},
 				options?.transition || 'slide',
-			);
+			), !! useTabs );
 
 			const plugins: EmblaPluginType[] = options?.transition === 'fade' ? [ Fade() ] : [];
 
@@ -302,7 +302,7 @@ export default function Edit( {
 			emblaApiRef.current = undefined;
 			delete ( viewport as { [EMBLA_KEY]?: typeof embla } )[ EMBLA_KEY ];
 		};
-	}, [ setEmblaApi, setCanScrollPrev, setCanScrollNext, carouselOptions ] );
+	}, [ setEmblaApi, setCanScrollPrev, setCanScrollNext, carouselOptions, useTabs ] );
 
 	return (
 		<>

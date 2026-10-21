@@ -38,3 +38,28 @@ export const applyTransitionOverrides = (
 		slidesToScroll: 1,
 	};
 };
+
+/**
+ * Tabs mode stacks every panel in one grid cell, so all slides share the
+ * same offset. Embla's default trimSnaps would then merge them into a
+ * single snap on reInit (e.g. window resize), collapsing the tab list to
+ * one tab and clamping tab clicks to index 0. Keep one snap per panel.
+ *
+ * @param {EmblaOptionsType} options Base Embla options.
+ * @param {boolean}          useTabs Whether the carousel is in tabs mode.
+ */
+export const applyTabsOverrides = (
+	options: EmblaOptionsType,
+	useTabs: boolean,
+): EmblaOptionsType => {
+	if ( ! useTabs ) {
+		return options;
+	}
+
+	return {
+		...options,
+		containScroll: false,
+		dragFree: false,
+		slidesToScroll: 1,
+	};
+};
