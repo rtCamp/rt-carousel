@@ -12,7 +12,11 @@ import {
 	DYNAMIC_LIST_CONTAINER_SELECTOR,
 	CAROUSEL_SLIDE_SELECTOR,
 } from './dynamic-list-selectors';
-import { normalizeContainScroll, applyTransitionOverrides } from './embla-options';
+import {
+	normalizeContainScroll,
+	applyTransitionOverrides,
+	applyTabsOverrides,
+} from './embla-options';
 
 type ElementWithRef = {
 	ref?: HTMLElement | null;
@@ -415,16 +419,19 @@ store( 'rt-carousel/carousel', {
 						slidesToScroll = rawOptions.slidesToScroll;
 					}
 
-					const options: EmblaOptionsType = applyTransitionOverrides(
-						{
-							...rawOptions,
-							align,
-							containScroll: normalizeContainScroll( rawOptions.containScroll ),
-							direction,
-							slidesToScroll,
-							container: dynamicListContainer || null,
-						},
-						context.transition,
+					const options: EmblaOptionsType = applyTabsOverrides(
+						applyTransitionOverrides(
+							{
+								...rawOptions,
+								align,
+								containScroll: normalizeContainScroll( rawOptions.containScroll ),
+								direction,
+								slidesToScroll,
+								container: dynamicListContainer || null,
+							},
+							context.transition,
+						),
+						!! context.useTabs,
 					);
 
 					const plugins = [];
