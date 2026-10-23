@@ -2,6 +2,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { useBlockProps } from '@wordpress/block-editor';
 import { EditorCarouselContext } from '../editor-context';
 import { useContext, useEffect, useRef, useState } from '@wordpress/element';
+import { useMergeRefs } from '@wordpress/compose';
 import type { EmblaCarouselType } from 'embla-carousel';
 
 const EMBLA_KEY = Symbol.for( 'rt-carousel.carousel' );
@@ -13,6 +14,7 @@ export default function Edit() {
 
 	const { emblaApi: contextApi } = useContext( EditorCarouselContext );
 	const ref = useRef<HTMLDivElement>( null );
+	const mergedRef = useMergeRefs( [ blockProps.ref, ref ] );
 	const [ scrollSnaps, setScrollSnaps ] = useState<number[]>( [] );
 	const [ selectedIndex, setSelectedIndex ] = useState( 0 );
 
@@ -85,7 +87,7 @@ export default function Edit() {
 	const dotsToRender = scrollSnaps.length > 0 ? scrollSnaps : [ 0, 1, 2 ];
 
 	return (
-		<div { ...blockProps } ref={ ref }>
+		<div { ...blockProps } ref={ mergedRef }>
 			{ dotsToRender.map( ( _, index ) => (
 				<button
 					key={ index }

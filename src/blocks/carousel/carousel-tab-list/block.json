@@ -1,7 +1,7 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"version": "1.0.0",
+	"version": "2.1.0",
 	"name": "rt-carousel/carousel-tab-list",
 	"title": "Tab List",
 	"category": "rt-carousel",
@@ -17,7 +17,8 @@
 		"labels": {
 			"type": "array",
 			"items": { "type": "string" },
-			"default": []
+			"default": [],
+			"role": "content"
 		},
 		"activeTabBackgroundColor": {
 			"type": "string",

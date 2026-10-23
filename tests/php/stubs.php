@@ -105,6 +105,23 @@ if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
 		}
 
 		/**
+		 * @param string $name Attribute name.
+		 *
+		 * @return bool Whether the attribute was present.
+		 */
+		public function remove_attribute( string $name ): bool {
+			$element = $this->elements[ $this->cursor ];
+
+			if ( ! $element->hasAttribute( $name ) ) {
+				return false;
+			}
+
+			$element->removeAttribute( $name );
+
+			return true;
+		}
+
+		/**
 		 * @return string The updated HTML.
 		 */
 		public function get_updated_html(): string {
@@ -115,6 +132,58 @@ if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
 			}
 
 			return $html;
+		}
+
+		/**
+		 * The element the cursor is on, for subclasses that need the DOM node.
+		 *
+		 * @return \DOMElement|null
+		 */
+		protected function current_element(): ?\DOMElement {
+			return $this->elements[ $this->cursor ] ?? null;
+		}
+	}
+}
+
+if ( ! class_exists( 'WP_HTML_Processor' ) ) {
+	class WP_HTML_Processor extends WP_HTML_Tag_Processor {
+		/**
+		 * @param string $html The HTML fragment.
+		 *
+		 * @return self|null
+		 */
+		public static function create_fragment( string $html ): ?self {
+			return new self( $html );
+		}
+
+		/**
+		 * Real WP reports 'unsupported' here when it abandons a walk; DOMDocument never does.
+		 *
+		 * @return string|null
+		 */
+		public function get_last_error(): ?string {
+			return null;
+		}
+
+		/**
+		 * Ancestor tag names, outermost first, ending with the current tag.
+		 *
+		 * @return array<int, string>
+		 */
+		public function get_breadcrumbs(): array {
+			$element = $this->current_element();
+
+			if ( null === $element ) {
+				return [];
+			}
+
+			$crumbs = [];
+
+			for ( $node = $element; $node instanceof \DOMElement; $node = $node->parentNode ) {
+				array_unshift( $crumbs, strtoupper( $node->tagName ) );
+			}
+
+			return $crumbs;
 		}
 	}
 }

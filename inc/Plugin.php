@@ -43,8 +43,10 @@ class Plugin {
 		add_action( 'init', [ $this, 'register_block_patterns' ] );
 		add_action( 'admin_notices', [ $this, 'legacy_plugin_notice' ] );
 		add_action( 'network_admin_notices', [ $this, 'legacy_plugin_notice' ] );
+
+		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'handle_block_markup' ], 10, 2 );
+		// Handled separately at a later priority to ensure all markup is in place.
 		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'handle_lazy_load_images' ], 16, 3 );
-		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'mark_query_loop_slides' ] );
 	}
 
 	/**
@@ -324,6 +326,21 @@ class Plugin {
 	}
 
 	/**
+	 * Apply the markup repairs a block's saved HTML cannot express on its own.
+	 *
+	 * @param string               $block_content The carousel's rendered HTML.
+	 * @param array<string, mixed> $parsed_block  The parsed block.
+	 *
+	 * @return string The filtered HTML.
+	 */
+	public function handle_block_markup( string $block_content, array $parsed_block ): string {
+		// Handle before marking tab panels so that Query Loop slides get the active-slide directives first.
+		$block_content = $this->mark_query_loop_slides( $block_content );
+
+		return $this->mark_tab_panels( $block_content, $parsed_block );
+	}
+
+	/**
 	 * Add the active-slide directives to Query Loop and Terms Query slides.
 	 *
 	 * The Slide block ships these directives in its saved markup; query and term loop items carry
@@ -378,5 +395,82 @@ class Plugin {
 		}
 
 		return $processor->get_updated_html();
+	}
+
+	/**
+	 * Promote slides to tab panels when the carousel is in tabs mode.
+	 *
+	 * This is done server-side because the Slide block cannot know its parent is a tab list, and a save() never receives block context.
+	 *
+	 * @param string               $block_content The carousel's rendered HTML.
+	 * @param array<string, mixed> $parsed_block  The parsed block.
+	 *
+	 * @return string The filtered HTML.
+	 */
+	public function mark_tab_panels( string $block_content, array $parsed_block ): string {
+		if ( empty( $parsed_block['attrs']['useTabs'] ) ) {
+			return $block_content;
+		}
+
+		$processor = \WP_HTML_Processor::create_fragment( $block_content );
+
+		if ( null === $processor ) {
+			return $block_content;
+		}
+
+		// Breadcrumb depth of the panel being promoted.
+		$panel_depth = null;
+
+		while ( $processor->next_tag() ) {
+			$depth = count( $processor->get_breadcrumbs() );
+
+			if ( null !== $panel_depth && $depth <= $panel_depth ) {
+				$panel_depth = null;
+			}
+
+			// Skip slides that aren't owned by this tab list to avoid duplicate IDs.
+			if ( null !== $panel_depth || ! $this->is_slide( $processor ) ) {
+				continue;
+			}
+
+			$panel_depth = $depth;
+
+			$processor->set_attribute( 'role', 'tabpanel' );
+			$processor->set_attribute( 'data-wp-bind--id', 'callbacks.getSlideTabPanelId' );
+			$processor->set_attribute( 'data-wp-bind--aria-labelledby', 'callbacks.getSlideTabLabelledBy' );
+
+			// Ensure the tab panel is focusable, even if it has no interactive content.
+			if ( null === $processor->get_attribute( 'tabindex' ) ) {
+				$processor->set_attribute( 'tabindex', '0' );
+			}
+
+			// Unlike carousels, a panel is named by its tab.
+			$processor->remove_attribute( 'aria-roledescription' );
+			$processor->remove_attribute( 'data-wp-bind--aria-current' );
+		}
+
+		// Only return the updated HTML if there were no errors.
+		return null !== $processor->get_last_error() ? $block_content : $processor->get_updated_html();
+	}
+
+	/**
+	 * Whether the processor is parked on something the carousel treats as a slide.
+	 *
+	 * @param \WP_HTML_Tag_Processor $processor Processor parked on a tag.
+	 *
+	 * @return bool
+	 */
+	private function is_slide( WP_HTML_Tag_Processor $processor ): bool {
+		$tag = $processor->get_tag();
+
+		if ( 'DIV' === $tag ) {
+			return true === $processor->has_class( 'embla__slide' );
+		}
+
+		if ( 'LI' === $tag ) {
+			return true === $processor->has_class( 'wp-block-post' ) || true === $processor->has_class( 'wp-block-term' );
+		}
+
+		return false;
 	}
 }

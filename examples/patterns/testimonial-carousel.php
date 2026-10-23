@@ -12,15 +12,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 
-<!-- wp:rt-carousel/carousel {"loop":true,"carouselAlign":"center","autoplay":true,"ariaLabel":"Customer Testimonials","slideGap":32,"metadata":{"categories":["rt-carousel"],"patternName":"rt-carousel/testimonial-carousel","name":"rtCarousel: Testimonial Carousel"},"className":"wp-block-carousel-carousel"} -->
-<div class="wp-block-rt-carousel-carousel rt-carousel wp-block-carousel-carousel" role="region" aria-roledescription="carousel" aria-label="Customer Testimonials" dir="ltr" data-axis="x" data-loop="true" data-wp-interactive="rt-carousel/carousel" data-wp-context="{&quot;options&quot;:{&quot;loop&quot;:true,&quot;dragFree&quot;:false,&quot;align&quot;:&quot;center&quot;,&quot;containScroll&quot;:&quot;trimSnaps&quot;,&quot;direction&quot;:&quot;ltr&quot;,&quot;axis&quot;:&quot;x&quot;,&quot;slidesToScroll&quot;:1},&quot;autoplay&quot;:{&quot;delay&quot;:4000,&quot;stopOnInteraction&quot;:true,&quot;stopOnMouseEnter&quot;:false},&quot;isPlaying&quot;:true,&quot;timerIterationId&quot;:0,&quot;selectedIndex&quot;:-1,&quot;scrollSnaps&quot;:[],&quot;canScrollPrev&quot;:false,&quot;canScrollNext&quot;:false,&quot;scrollProgress&quot;:0,&quot;slideCount&quot;:0,&quot;ariaLabelPattern&quot;:&quot;Go to slide %d&quot;}" data-wp-init="callbacks.initCarousel" style="--rt-carousel-gap:32px"><!-- wp:heading {"textAlign":"center","className":"is-style-default","fontSize":"x-large"} -->
+<!-- wp:rt-carousel/carousel {"loop":true,"carouselAlign":"center","autoplay":true,"ariaLabel":"Customer Testimonials","slideGap":32,"metadata":{"categories":["rt-carousel"],"patternName":"rt-carousel/testimonial-carousel","name":"rtCarousel: Testimonial Carousel"}} -->
+<div class="wp-block-rt-carousel-carousel rt-carousel" role="region" aria-roledescription="carousel" aria-label="Customer Testimonials" dir="ltr" data-axis="x" data-loop="true" data-wp-interactive="rt-carousel/carousel" data-wp-context="{&quot;transition&quot;:&quot;slide&quot;,&quot;options&quot;:{&quot;loop&quot;:true,&quot;dragFree&quot;:false,&quot;align&quot;:&quot;center&quot;,&quot;containScroll&quot;:&quot;trimSnaps&quot;,&quot;direction&quot;:&quot;ltr&quot;,&quot;axis&quot;:&quot;x&quot;,&quot;slidesToScroll&quot;:1},&quot;autoplay&quot;:{&quot;delay&quot;:4000,&quot;stopOnInteraction&quot;:true,&quot;stopOnMouseEnter&quot;:false},&quot;isPlaying&quot;:true,&quot;timerIterationId&quot;:0,&quot;selectedIndex&quot;:-1,&quot;scrollSnaps&quot;:[],&quot;canScrollPrev&quot;:false,&quot;canScrollNext&quot;:false,&quot;scrollProgress&quot;:0,&quot;slideCount&quot;:0,&quot;ariaLabelPattern&quot;:&quot;Go to slide %d&quot;,&quot;countLabelPattern&quot;:&quot;Slide {{currentSlide}} of {{totalSlides}}&quot;,&quot;announcement&quot;:&quot;&quot;,&quot;shouldAnnounce&quot;:false,&quot;announcementPattern&quot;:&quot;Slide {{currentSlide}} of {{totalSlides}}&quot;,&quot;autoScroll&quot;:false,&quot;useTabs&quot;:false,&quot;carouselId&quot;:&quot;&quot;}" data-wp-init="callbacks.initCarousel" style="--rt-carousel-gap:32px"><!-- wp:heading {"textAlign":"center","className":"is-style-default","fontSize":"x-large"} -->
 	<h2 class="wp-block-heading has-text-align-center is-style-default has-x-large-font-size">What Our Customers Say</h2>
 	<!-- /wp:heading -->
 
-	<!-- wp:rt-carousel/carousel-viewport {"className":"wp-block-carousel-carousel-viewport"} -->
-	<div class="wp-block-rt-carousel-carousel-viewport embla wp-block-carousel-carousel-viewport">
-		<div class="embla__container"><!-- wp:rt-carousel/carousel-slide {"className":"wp-block-carousel-carousel-slide"} -->
-			<div class="wp-block-rt-carousel-carousel-slide embla__slide wp-block-carousel-carousel-slide" role="group" aria-roledescription="slide" data-wp-interactive="rt-carousel/carousel" data-wp-class--is-active="callbacks.isSlideActive" data-wp-bind--aria-current="callbacks.isSlideActive"><!-- wp:group {"style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}}},"backgroundColor":"base","layout":{"type":"constrained","contentSize":"600px"}} -->
+	<!-- wp:rt-carousel/carousel-viewport -->
+	<div class="wp-block-rt-carousel-carousel-viewport embla">
+		<div class="embla__container"><!-- wp:rt-carousel/carousel-slide -->
+			<div class="wp-block-rt-carousel-carousel-slide embla__slide" role="group" aria-roledescription="slide" data-wp-interactive="rt-carousel/carousel" data-wp-class--is-active="callbacks.isSlideActive" data-wp-bind--aria-current="callbacks.isSlideActive"><!-- wp:group {"style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}}},"backgroundColor":"base","layout":{"type":"constrained","contentSize":"600px"}} -->
 				<div class="wp-block-group has-base-background-color has-background" style="padding-top:2rem;padding-right:2rem;padding-bottom:2rem;padding-left:2rem"><!-- wp:paragraph {"align":"center","fontSize":"large"} -->
 					<p class="has-text-align-center has-large-font-size">"This product changed my workflow completely. Highly recommended!"</p>
 					<!-- /wp:paragraph -->
@@ -37,8 +37,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 			<!-- /wp:rt-carousel/carousel-slide -->
 
-			<!-- wp:rt-carousel/carousel-slide {"className":"wp-block-carousel-carousel-slide"} -->
-			<div class="wp-block-rt-carousel-carousel-slide embla__slide wp-block-carousel-carousel-slide" role="group" aria-roledescription="slide" data-wp-interactive="rt-carousel/carousel" data-wp-class--is-active="callbacks.isSlideActive" data-wp-bind--aria-current="callbacks.isSlideActive"><!-- wp:group {"style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}}},"backgroundColor":"base","layout":{"type":"constrained","contentSize":"600px"}} -->
+			<!-- wp:rt-carousel/carousel-slide -->
+			<div class="wp-block-rt-carousel-carousel-slide embla__slide" role="group" aria-roledescription="slide" data-wp-interactive="rt-carousel/carousel" data-wp-class--is-active="callbacks.isSlideActive" data-wp-bind--aria-current="callbacks.isSlideActive"><!-- wp:group {"style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}}},"backgroundColor":"base","layout":{"type":"constrained","contentSize":"600px"}} -->
 				<div class="wp-block-group has-base-background-color has-background" style="padding-top:2rem;padding-right:2rem;padding-bottom:2rem;padding-left:2rem"><!-- wp:paragraph {"align":"center","fontSize":"large"} -->
 					<p class="has-text-align-center has-large-font-size">"Excellent support and amazing features. Worth every penny!"</p>
 					<!-- /wp:paragraph -->
@@ -55,8 +55,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 			</div>
 			<!-- /wp:rt-carousel/carousel-slide -->
 
-			<!-- wp:rt-carousel/carousel-slide {"className":"wp-block-carousel-carousel-slide"} -->
-			<div class="wp-block-rt-carousel-carousel-slide embla__slide wp-block-carousel-carousel-slide" role="group" aria-roledescription="slide" data-wp-interactive="rt-carousel/carousel" data-wp-class--is-active="callbacks.isSlideActive" data-wp-bind--aria-current="callbacks.isSlideActive"><!-- wp:group {"style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}}},"backgroundColor":"base","layout":{"type":"constrained","contentSize":"600px"}} -->
+			<!-- wp:rt-carousel/carousel-slide -->
+			<div class="wp-block-rt-carousel-carousel-slide embla__slide" role="group" aria-roledescription="slide" data-wp-interactive="rt-carousel/carousel" data-wp-class--is-active="callbacks.isSlideActive" data-wp-bind--aria-current="callbacks.isSlideActive"><!-- wp:group {"style":{"spacing":{"padding":{"top":"2rem","bottom":"2rem","left":"2rem","right":"2rem"}}},"backgroundColor":"base","layout":{"type":"constrained","contentSize":"600px"}} -->
 				<div class="wp-block-group has-base-background-color has-background" style="padding-top:2rem;padding-right:2rem;padding-bottom:2rem;padding-left:2rem"><!-- wp:paragraph {"align":"center","fontSize":"large"} -->
 					<p class="has-text-align-center has-large-font-size">"Simple, elegant, and powerful. Best investment we made!"</p>
 					<!-- /wp:paragraph -->
@@ -77,12 +77,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<!-- /wp:rt-carousel/carousel-viewport -->
 
 	<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","justifyContent":"center","orientation":"vertical"}} -->
-	<div class="wp-block-group"><!-- wp:rt-carousel/carousel-dots {"className":"wp-block-carousel-carousel-dots"} -->
-		<div class="wp-block-rt-carousel-carousel-dots rt-carousel-dots wp-block-carousel-carousel-dots"><template data-wp-each--snap="context.scrollSnaps"><button class="rt-carousel-dot" data-wp-class--is-active="callbacks.isDotActive" data-wp-bind--aria-current="callbacks.isDotActive" data-wp-on--click="actions.onDotClick" data-wp-bind--aria-label="callbacks.getDotLabel" type="button"></button></template></div>
+	<div class="wp-block-group"><!-- wp:rt-carousel/carousel-dots -->
+		<div class="wp-block-rt-carousel-carousel-dots rt-carousel-dots"><template data-wp-each--snap="context.scrollSnaps"><button class="rt-carousel-dot" data-wp-class--is-active="callbacks.isDotActive" data-wp-bind--aria-current="callbacks.isDotActive" data-wp-on--click="actions.onDotClick" data-wp-bind--aria-label="callbacks.getDotLabel" type="button"></button></template></div>
 		<!-- /wp:rt-carousel/carousel-dots -->
 
-		<!-- wp:rt-carousel/carousel-controls {"className":"wp-block-carousel-carousel-controls"} -->
-		<div class="wp-block-rt-carousel-carousel-controls rt-carousel-controls wp-block-carousel-carousel-controls"><button type="button" class="rt-carousel-controls__btn rt-carousel-controls__btn--prev" data-wp-on--click="actions.scrollPrev" data-wp-bind--disabled="!state.canScrollPrev" aria-label="Previous Slide"><svg class="rt-carousel-controls__icon" width="13" height="8" viewBox="0 0 13 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+		<!-- wp:rt-carousel/carousel-controls -->
+		<div class="wp-block-rt-carousel-carousel-controls rt-carousel-controls"><button type="button" class="rt-carousel-controls__btn rt-carousel-controls__btn--prev" data-wp-on--click="actions.scrollPrev" data-wp-bind--disabled="!state.canScrollPrev" aria-label="Previous Slide"><svg class="rt-carousel-controls__icon" width="13" height="8" viewBox="0 0 13 8" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<path d="M0 3.55371L3.55371 7.10742V4.26562H12.7861V2.84375H3.55371V0L0 3.55371Z" fill="#1C1C1C"></path>
 				</svg></button><button type="button" class="rt-carousel-controls__btn rt-carousel-controls__btn--next" data-wp-on--click="actions.scrollNext" data-wp-bind--disabled="!state.canScrollNext" aria-label="Next Slide"><svg class="rt-carousel-controls__icon" width="13" height="8" viewBox="0 0 13 8" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<path d="M12.7861 3.55371L9.23242 7.10742V4.26562H0V2.84375H9.23242V0L12.7861 3.55371Z" fill="#1C1C1C"></path>
@@ -90,5 +90,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<!-- /wp:rt-carousel/carousel-controls -->
 	</div>
 	<!-- /wp:group -->
+
+	<span class="screen-reader-text" role="status" aria-live="polite" aria-atomic="true" data-wp-text="context.announcement"></span>
 </div>
 <!-- /wp:rt-carousel/carousel -->

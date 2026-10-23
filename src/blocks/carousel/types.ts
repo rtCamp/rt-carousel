@@ -1,5 +1,8 @@
 import type { EmblaOptionsType } from 'embla-carousel';
-import type { BlockVerticalAlignmentToolbar } from '@wordpress/block-editor';
+import type {
+	BlockVerticalAlignmentToolbar,
+	InnerBlocks,
+} from '@wordpress/block-editor';
 
 export type CarouselAttributes = {
 	transition: 'slide' | 'fade';
@@ -59,6 +62,14 @@ export interface BlockEditorSelectors {
 	getBlockParentsByBlockName: ( clientId: string, name: string ) => string[];
 	getBlockRootClientId: ( clientId: string ) => string | null;
 }
+
+/**
+ * This is required because `@types/wordpress__block-editor` predates `defaultBlock`/`directInsert`
+ */
+export type ViewportInnerBlocksOptions = InnerBlocks.Props & {
+	defaultBlock?: { name: string; attributes?: Record< string, unknown > };
+	directInsert?: boolean;
+};
 
 /**
  * Depth-first search for the first block of `name` anywhere in the tree.

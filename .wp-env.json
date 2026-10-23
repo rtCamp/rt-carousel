@@ -2,5 +2,9 @@
 	"$schema": "https://schemas.wp.org/trunk/wp-env.json",
 	"plugins": [ "." ],
 	"testsEnvironment": false,
+	"config": {
+		"WP_ENVIRONMENT_TYPE": "development",
+		"WP_DEVELOPMENT_MODE": "all"
+	},
 	"phpmyadminPort": 9000
 }

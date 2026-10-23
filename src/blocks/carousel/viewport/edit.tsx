@@ -9,7 +9,11 @@ import { createBlock } from '@wordpress/blocks';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 import { plus } from '@wordpress/icons';
-import type { CarouselViewportAttributes, BlockEditorSelectors } from '../types';
+import type {
+	CarouselViewportAttributes,
+	BlockEditorSelectors,
+	ViewportInnerBlocksOptions,
+} from '../types';
 import { useContext, useEffect, useRef, useCallback, useState } from '@wordpress/element';
 import { useMergeRefs } from '@wordpress/compose';
 import { EditorCarouselContext } from '../editor-context';
@@ -20,6 +24,12 @@ import { DYNAMIC_LIST_CONTAINER_SELECTOR } from '../dynamic-list-selectors';
 import { normalizeContainScroll, applyTransitionOverrides } from '../embla-options';
 
 const EMBLA_KEY = Symbol.for( 'carousel-system.carousel' );
+
+// Use constant to prevent re-rendering of the same JSX in the appender when the viewport is empty.
+const DEFAULT_SLIDE_BLOCK = {
+	name: 'rt-carousel/carousel-slide',
+	attributes: {},
+};
 
 export default function Edit( {
 	clientId,
@@ -140,6 +150,14 @@ export default function Edit( {
 		[ addSlide, addQueryLoop, addTermsQuery ],
 	);
 
+	const innerBlocksOptions: ViewportInnerBlocksOptions = {
+		orientation: carouselOptions?.axis === 'y' ? 'vertical' : 'horizontal',
+		allowedBlocks: [ 'rt-carousel/carousel-slide', 'core/query', 'core/terms-query' ],
+		renderAppender: ! hasSlides ? EmptyAppender : undefined,
+		defaultBlock: DEFAULT_SLIDE_BLOCK,
+		directInsert: true,
+	};
+
 	const innerBlocksProps = useInnerBlocksProps(
 		{
 			className: 'embla__container',
@@ -149,11 +167,7 @@ export default function Edit( {
 				flexDirection: ( carouselOptions?.axis === 'y' ? 'column' : 'row' ) as React.CSSProperties[ 'flexDirection' ],
 			},
 		},
-		{
-			orientation: carouselOptions?.axis === 'y' ? 'vertical' : 'horizontal',
-			allowedBlocks: [ 'rt-carousel/carousel-slide', 'core/query', 'core/terms-query' ],
-			renderAppender: ! hasSlides ? EmptyAppender : undefined,
-		},
+		innerBlocksOptions,
 	);
 
 	useEffect( () => {
