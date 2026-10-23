@@ -4,7 +4,10 @@
 	--rt-carousel-slide-width: 100%;
 
 	/*
-	 * "Slides per view": the count is set inline by the block.
+	 * "Slides per view": the count is set inline by the block. The var() below
+	 * is resolved on this element, so when the count is unset (`initial`, which
+	 * also stops a parent carousel's count reaching a nested one) the width
+	 * becomes invalid and slides fall back to --rt-carousel-slide-width.
 	 */
 	--rt-carousel-slides-per-view: initial;
 	--rt-carousel-spv-width: calc((100% + var(--rt-carousel-gap, 0px)) / var(--rt-carousel-slides-per-view) - var(--rt-carousel-gap, 0px));

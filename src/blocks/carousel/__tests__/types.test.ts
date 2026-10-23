@@ -34,7 +34,6 @@ describe( 'CarouselAttributes Type', () => {
 				ariaLabel: 'Image carousel',
 				slideGap: 16,
 				slidesToScroll: '1',
-				slidesPerView: 1,
 				useTabs: false,
 				lazyLoadImages: true,
 				autoScroll: false,

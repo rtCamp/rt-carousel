@@ -174,7 +174,6 @@ const createAttributes = (): CarouselAttributes => ( {
 	autoplayStopOnMouseEnter: false,
 	ariaLabel: 'Carousel',
 	slidesToScroll: '1',
-	slidesPerView: 1,
 	slideGap: 0,
 	useTabs: false,
 	lazyLoadImages: true,
@@ -392,7 +391,7 @@ describe( 'Slides per View', () => {
 
 		const control = findSlidesPerViewControl();
 		expect( control ).toBeDefined();
-		expect( control[ 0 ].value ).toBe( 1 );
+		expect( control[ 0 ].value ).toBeUndefined();
 
 		control[ 0 ].onChange( 3 );
 		expect( setAttributes ).toHaveBeenCalledWith( { slidesPerView: 3 } );
@@ -411,7 +410,20 @@ describe( 'Slides per View', () => {
 		expect( props.style[ '--rt-carousel-slides-per-view' ] ).toBe( '3' );
 	} );
 
-	it( 'leaves the wrapper untouched at the default of one', () => {
+	it( 'applies an explicit one so it can override column styles', () => {
+		render(
+			<Edit
+				attributes={ { ...createAttributes(), slidesPerView: 1 } }
+				setAttributes={ jest.fn() }
+				clientId="client-spv-explicit-1"
+			/>,
+		);
+
+		const props = lastBlockProps();
+		expect( props.style[ '--rt-carousel-slides-per-view' ] ).toBe( '1' );
+	} );
+
+	it( 'leaves the wrapper untouched when unset', () => {
 		render(
 			<Edit
 				attributes={ createAttributes() }
