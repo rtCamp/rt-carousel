@@ -1,10 +1,18 @@
 import { useBlockProps } from '@wordpress/block-editor';
 import { __ } from '@wordpress/i18n';
 import { NextIcon, PreviousIcon } from './components/icons';
+import { getPositionClassName } from './get-position-class';
+import type { CarouselControlsAttributes } from '../types';
 
-export default function Save() {
+export default function Save( {
+	attributes,
+}: {
+	attributes: CarouselControlsAttributes;
+} ) {
+	const { position } = attributes;
+
 	const blockProps = useBlockProps.save( {
-		className: 'rt-carousel-controls',
+		className: getPositionClassName( position ),
 	} );
 
 	return (
