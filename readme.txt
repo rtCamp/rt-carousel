@@ -20,7 +20,7 @@ A modular, high-performance carousel block for WordPress, powered by the Interac
 * **High Performance** – Powered by Embla Carousel v8
 * **Interactivity API** – Reactive state management with zero hydration overhead
 * **Query Loop Support** – Each post in a Query Loop becomes a slide automatically
-* **Accessibility** – W3C-compliant roles, labels, and keyboard navigation
+* **Accessibility** – W3C-compliant roles, labels, keyboard navigation, and reduced-motion support
 * **RTL Support** – Built-in support for Right-to-Left languages
 
 = Block Components =
@@ -69,7 +69,7 @@ Yes. Add a Query Loop inside the Carousel Viewport, and each post becomes a slid
 
 = Is it accessible? =
 
-Yes. The carousel follows W3C accessibility guidelines with proper ARIA roles, labels, and full keyboard navigation.
+Yes. The carousel follows W3C accessibility guidelines with proper ARIA roles, labels, and full keyboard navigation. It also respects the reduced-motion setting: slides change without animation and Autoplay / Auto Scroll do not start.
 
 = Can I have multiple carousels on the same page? =
 
