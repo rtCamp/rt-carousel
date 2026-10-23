@@ -15,7 +15,7 @@ type TabKeys = 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown' | 'Home' | '
 /**
  * Extends rt-carousel/carousel store — reuses onDotClick/isDotActive/scrollSnaps as-is.
  *
- * Store merge safety: @wordpress/interactivity's `store()` merges namespaces
+ * Store merge safety: `@wordpress/interactivity`'s `store()` merges namespaces
  * idempotently. If this file evaluates before the parent carousel's view.ts,
  * the parent's later call extends the same store (and vice versa). Order does
  * not matter.

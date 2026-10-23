@@ -104,7 +104,7 @@ export default function Save( {
 		style: {
 			'--rt-carousel-gap': `${ slideGap }px`,
 			'--rt-carousel-height': axis === 'y' ? height : undefined,
-		} as React.CSSProperties,
+		},
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( blockProps ) as ReturnType<

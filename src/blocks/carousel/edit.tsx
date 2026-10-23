@@ -458,7 +458,7 @@ export default function Edit( {
 									{ label: __( 'Fade', 'rt-carousel' ), value: 'fade' },
 								] }
 								onChange={ ( value ) =>
-									setAttributes( { transition: value as CarouselAttributes[ 'transition' ] } )
+									setAttributes( { transition: value } )
 								}
 								help={
 									autoScroll
@@ -505,7 +505,7 @@ export default function Edit( {
 										{ label: __( 'End', 'rt-carousel' ), value: 'end' },
 									] }
 									onChange={ ( value ) =>
-										setAttributes( { carouselAlign: value as CarouselAttributes[ 'carouselAlign' ] } )
+										setAttributes( { carouselAlign: value } )
 									}
 								/>
 							) }
@@ -559,7 +559,7 @@ export default function Edit( {
 									{ label: __( 'Right to Left (RTL)', 'rt-carousel' ), value: 'rtl' },
 								] }
 								onChange={ ( value ) =>
-									setAttributes( { direction: value as CarouselAttributes[ 'direction' ] } )
+									setAttributes( { direction: value } )
 								}
 								help={ __(
 									'Choose content direction. RTL is typically used for Arabic, Hebrew, and other right-to-left languages.',
@@ -574,7 +574,7 @@ export default function Edit( {
 									{ label: __( 'Vertical', 'rt-carousel' ), value: 'y' },
 								] }
 								onChange={ ( value ) =>
-									setAttributes( { axis: value as CarouselAttributes[ 'axis' ] } )
+									setAttributes( { axis: value } )
 								}
 							/>
 							{ axis === 'y' && (
@@ -683,7 +683,7 @@ export default function Edit( {
 								] }
 								onChange={ ( value ) =>
 									setAttributes( {
-										autoScrollDirection: value as CarouselAttributes['autoScrollDirection'],
+										autoScrollDirection: value,
 										loop: value === 'backward' ? true : loop,
 									} )
 								}
@@ -742,7 +742,7 @@ export default function Edit( {
 					<FormTokenField
 						label={ __( 'Allowed Slide Blocks', 'rt-carousel' ) }
 						value={ allowedSlideBlocks || [] }
-						suggestions={ suggestions as string[] }
+						suggestions={ suggestions }
 						maxSuggestions={ 10 }
 						onChange={ ( tokens ) =>
 							setAttributes( { allowedSlideBlocks: tokens as string[] } )

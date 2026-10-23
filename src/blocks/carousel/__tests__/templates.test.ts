@@ -3,7 +3,7 @@
  *
  * Verifies:
  * - All default templates have the required shape
- * - Template inner blocks produce valid BlockInstance arrays
+ * - Template inner blocks produce valid Block arrays
  * - Query Loop template is flagged correctly
  * - The `rtcamp.carouselKit.slideTemplates` filter hook is applied
  *
@@ -86,7 +86,7 @@ describe( 'Slide Templates', () => {
 		} );
 
 		it( 'falls back to defaults when a filter returns a non-array value', () => {
-			mockedApplyFilters.mockImplementationOnce( () => 'invalid' as never );
+			mockedApplyFilters.mockImplementationOnce( () => 'invalid' );
 
 			const templates = getSlideTemplates();
 

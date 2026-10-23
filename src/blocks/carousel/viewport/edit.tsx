@@ -146,7 +146,7 @@ export default function Edit( {
 			style: {
 				height: carouselOptions?.axis === 'y' ? 'auto' : undefined,
 				minHeight: carouselOptions?.axis === 'y' ? '100%' : undefined,
-				flexDirection: ( carouselOptions?.axis === 'y' ? 'column' : 'row' ) as React.CSSProperties[ 'flexDirection' ],
+				flexDirection: carouselOptions?.axis === 'y' ? ( 'column' as const ) : ( 'row' as const ),
 			},
 		},
 		{
