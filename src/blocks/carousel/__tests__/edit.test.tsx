@@ -10,6 +10,7 @@ import Edit from '../edit';
 import type { CarouselAttributes } from '../types';
 import type { ReactNode as MockReactNode } from 'react';
 import { SelectControl, ToggleControl, RangeControl } from '@wordpress/components';
+import { useBlockProps } from '@wordpress/block-editor';
 
 let mockBlockCount = 0;
 
@@ -359,6 +360,103 @@ describe( 'Carousel Edit setup flow', () => {
 			autoScroll: true,
 			transition: 'slide',
 		} ) );
+	} );
+} );
+
+describe( 'Slides per View', () => {
+	const findSlidesPerViewControl = () =>
+		( RangeControl as unknown as jest.Mock ).mock.calls.find(
+			( [ props ] ) => props.label === 'Slides per View',
+		);
+	const lastBlockProps = () => {
+		const calls = ( useBlockProps as unknown as jest.Mock ).mock.calls;
+		return calls[ calls.length - 1 ][ 0 ];
+	};
+
+	beforeEach( () => {
+		mockBlockCount = 1;
+		( RangeControl as unknown as jest.Mock ).mockClear();
+		( useBlockProps as unknown as jest.Mock ).mockClear();
+	} );
+
+	it( 'renders the control and updates the attribute', () => {
+		const setAttributes = jest.fn();
+		render(
+			<Edit
+				attributes={ createAttributes() }
+				setAttributes={ setAttributes }
+				clientId="client-spv"
+			/>,
+		);
+
+		const control = findSlidesPerViewControl();
+		expect( control ).toBeDefined();
+		expect( control[ 0 ].value ).toBeUndefined();
+
+		control[ 0 ].onChange( 3 );
+		expect( setAttributes ).toHaveBeenCalledWith( { slidesPerView: 3 } );
+	} );
+
+	it( 'applies the CSS variable when set above one', () => {
+		render(
+			<Edit
+				attributes={ { ...createAttributes(), slidesPerView: 3 } }
+				setAttributes={ jest.fn() }
+				clientId="client-spv-3"
+			/>,
+		);
+
+		const props = lastBlockProps();
+		expect( props.style[ '--rt-carousel-slides-per-view' ] ).toBe( '3' );
+	} );
+
+	it( 'applies an explicit one so it can override column styles', () => {
+		render(
+			<Edit
+				attributes={ { ...createAttributes(), slidesPerView: 1 } }
+				setAttributes={ jest.fn() }
+				clientId="client-spv-explicit-1"
+			/>,
+		);
+
+		const props = lastBlockProps();
+		expect( props.style[ '--rt-carousel-slides-per-view' ] ).toBe( '1' );
+	} );
+
+	it( 'leaves the wrapper untouched when unset', () => {
+		render(
+			<Edit
+				attributes={ createAttributes() }
+				setAttributes={ jest.fn() }
+				clientId="client-spv-1"
+			/>,
+		);
+
+		const props = lastBlockProps();
+		expect( props.style[ '--rt-carousel-slides-per-view' ] ).toBeUndefined();
+	} );
+
+	it( 'hides the control for fade transitions', () => {
+		render(
+			<Edit
+				attributes={ { ...createAttributes(), transition: 'fade', slidesPerView: 3 } }
+				setAttributes={ jest.fn() }
+				clientId="client-spv-fade"
+			/>,
+		);
+		expect( findSlidesPerViewControl() ).toBeUndefined();
+		expect( lastBlockProps().style[ '--rt-carousel-slides-per-view' ] ).toBeUndefined();
+	} );
+
+	it( 'does not apply the setting in tabs mode', () => {
+		render(
+			<Edit
+				attributes={ { ...createAttributes(), useTabs: true, slidesPerView: 3 } }
+				setAttributes={ jest.fn() }
+				clientId="client-spv-tabs"
+			/>,
+		);
+		expect( lastBlockProps().style[ '--rt-carousel-slides-per-view' ] ).toBeUndefined();
 	} );
 } );
 

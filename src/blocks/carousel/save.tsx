@@ -2,6 +2,7 @@ import { useBlockProps, useInnerBlocksProps } from '@wordpress/block-editor';
 import { __ } from '@wordpress/i18n';
 import type { CarouselAttributes, CarouselContext } from './types';
 import { encodeContext } from './encode-context';
+import { getCarouselStyle } from './carousel-style';
 
 export default function Save( {
 	attributes,
@@ -20,9 +21,7 @@ export default function Save( {
 		autoplayStopOnInteraction,
 		autoplayStopOnMouseEnter,
 		ariaLabel,
-		slideGap,
 		axis,
-		height,
 		slidesToScroll,
 		useTabs = false,
 		autoScroll,
@@ -101,10 +100,7 @@ export default function Save( {
 		'data-wp-interactive': 'rt-carousel/carousel',
 		'data-wp-context': encodeContext( JSON.stringify( context ) ),
 		'data-wp-init': 'callbacks.initCarousel', // Use init for mounting
-		style: {
-			'--rt-carousel-gap': `${ slideGap }px`,
-			'--rt-carousel-height': axis === 'y' ? height : undefined,
-		} as React.CSSProperties,
+		style: getCarouselStyle( attributes ),
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( blockProps ) as ReturnType<
