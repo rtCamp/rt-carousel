@@ -12,11 +12,7 @@ import {
 	DYNAMIC_LIST_CONTAINER_SELECTOR,
 	CAROUSEL_SLIDE_SELECTOR,
 } from './dynamic-list-selectors';
-import {
-	normalizeContainScroll,
-	applyTransitionOverrides,
-	applyTabsOverrides,
-} from './embla-options';
+import { normalizeContainScroll, applyStackedOverrides } from './embla-options';
 
 type ElementWithRef = {
 	ref?: HTMLElement | null;
@@ -289,14 +285,7 @@ store( 'rt-carousel/carousel', {
 			const { snap } = context as CarouselContext & {
 				snap?: { index?: number };
 			};
-			if ( typeof snap?.index !== 'number' ) {
-				return false;
-			}
-			const selectedIndex =
-				typeof context.selectedIndex === 'number' && context.selectedIndex >= 0
-					? context.selectedIndex
-					: 0;
-			return selectedIndex === snap.index;
+			return context.selectedIndex === snap?.index;
 		},
 		getDotLabel: () => {
 			const context = getContext<CarouselContext>();
@@ -419,19 +408,16 @@ store( 'rt-carousel/carousel', {
 						slidesToScroll = rawOptions.slidesToScroll;
 					}
 
-					const options: EmblaOptionsType = applyTabsOverrides(
-						applyTransitionOverrides(
-							{
-								...rawOptions,
-								align,
-								containScroll: normalizeContainScroll( rawOptions.containScroll ),
-								direction,
-								slidesToScroll,
-								container: dynamicListContainer || null,
-							},
-							context.transition,
-						),
-						!! context.useTabs,
+					const options: EmblaOptionsType = applyStackedOverrides(
+						{
+							...rawOptions,
+							align,
+							containScroll: normalizeContainScroll( rawOptions.containScroll ),
+							direction,
+							slidesToScroll,
+							container: dynamicListContainer || null,
+						},
+						{ transition: context.transition, useTabs: !! context.useTabs },
 					);
 
 					const plugins = [];
