@@ -209,6 +209,15 @@ describe( 'getTabTabIndex (roving tabindex)', () => {
 		);
 		expect( storeConfig!.callbacks.getTabTabIndex() ).toBe( '-1' );
 	} );
+
+	it( 'returns "-1" when snap or snap.index is undefined', () => {
+		( getContext as jest.Mock ).mockReturnValue( {
+			carouselId: 'c1',
+			selectedIndex: 0,
+			snap: undefined,
+		} );
+		expect( storeConfig!.callbacks.getTabTabIndex() ).toBe( '-1' );
+	} );
 } );
 
 describe( 'getKeyFeatureDotText', () => {

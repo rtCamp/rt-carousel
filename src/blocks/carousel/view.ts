@@ -12,7 +12,7 @@ import {
 	DYNAMIC_LIST_CONTAINER_SELECTOR,
 	CAROUSEL_SLIDE_SELECTOR,
 } from './dynamic-list-selectors';
-import { normalizeContainScroll, applyTransitionOverrides } from './embla-options';
+import { normalizeContainScroll, applyStackedOverrides } from './embla-options';
 
 type ElementWithRef = {
 	ref?: HTMLElement | null;
@@ -408,7 +408,7 @@ store( 'rt-carousel/carousel', {
 						slidesToScroll = rawOptions.slidesToScroll;
 					}
 
-					const options: EmblaOptionsType = applyTransitionOverrides(
+					const options: EmblaOptionsType = applyStackedOverrides(
 						{
 							...rawOptions,
 							align,
@@ -417,7 +417,7 @@ store( 'rt-carousel/carousel', {
 							slidesToScroll,
 							container: dynamicListContainer || null,
 						},
-						context.transition,
+						{ transition: context.transition, useTabs: !! context.useTabs },
 					);
 
 					const plugins = [];

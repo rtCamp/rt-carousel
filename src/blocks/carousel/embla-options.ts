@@ -15,24 +15,30 @@ export const normalizeContainScroll = (
 };
 
 /**
- * Fade requires align: 'center' and containScroll: false to render
- * correctly, and stacking makes dragFree/multi-slide slidesToScroll
- * meaningless. See https://www.embla-carousel.com/docs/plugins/fade
+ * Fade and tabs mode both stack every slide in one grid cell, so all slides
+ * share the same offset. Embla's default trimSnaps would then merge them into
+ * a single snap (e.g. on reInit after a window resize), collapsing the tab
+ * list to one tab, and dragFree/multi-slide slidesToScroll are meaningless.
+ * Fade additionally requires align: 'center'.
+ * See https://www.embla-carousel.com/docs/plugins/fade
  *
- * @param {EmblaOptionsType} options    Base Embla options.
- * @param {'slide'|'fade'}   transition Active transition style.
+ * @param {EmblaOptionsType} options         Base Embla options.
+ * @param {Object}           mode            Carousel mode.
+ * @param {'slide'|'fade'}   mode.transition Active transition style.
+ * @param {boolean}          mode.useTabs    Whether the carousel is in tabs mode.
  */
-export const applyTransitionOverrides = (
+export const applyStackedOverrides = (
 	options: EmblaOptionsType,
-	transition: 'slide' | 'fade',
+	{ transition, useTabs }: { transition: 'slide' | 'fade'; useTabs: boolean },
 ): EmblaOptionsType => {
-	if ( transition !== 'fade' ) {
+	const isFade = transition === 'fade';
+	if ( ! isFade && ! useTabs ) {
 		return options;
 	}
 
 	return {
 		...options,
-		align: 'center',
+		...( isFade ? { align: 'center' as const } : {} ),
 		containScroll: false,
 		dragFree: false,
 		slidesToScroll: 1,
