@@ -104,7 +104,13 @@ export default function Edit( {
 	setStyleVar( style, '--rt-tab-border-style', attributes.style?.border?.style );
 	setStyleVar( style, '--rt-tab-border-radius', resolveWpValue( attributes.style?.border?.radius ) );
 
-	const blockProps = useBlockProps( { style } );
+	/* WP adds is-content-justification-* on the front end but not in the
+	 * editor; mirror it so the mobile overflow-safe alignment in style.scss
+	 * applies to the editor preview too. */
+	const blockProps = useBlockProps( {
+		className: justify ? `is-content-justification-${ justify }` : undefined,
+		style,
+	} );
 
 	const setLabelAt = ( index: number, value: string ) => {
 		const next = [ ...labels ];

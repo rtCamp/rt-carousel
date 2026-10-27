@@ -48,9 +48,10 @@
 		&:focus-visible {
 
 			/* Visible by default (WCAG 2.4.7). High contrast outline for keyboard
-			 * navigation. */
+			 * navigation. Drawn inside the button so the scrollable mobile tab
+			 * list (overflow: auto) cannot clip it. */
 			outline: 2px solid var(--wp-admin-theme-color, #007cba);
-			outline-offset: 2px;
+			outline-offset: -2px;
 		}
 
 		&.is-active,
@@ -72,6 +73,22 @@
 		scrollbar-width: thin;
 		scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 		padding-bottom: 4px;
+
+		/* Center/right alignment would push the leading tabs past the scroll
+		 * origin, where they cannot be scrolled to. `safe` keeps the chosen
+		 * alignment when the tabs fit and falls back to start when they
+		 * overflow. !important is needed to beat the inline justify-content
+		 * written by edit.tsx/save.tsx (changing save output would invalidate
+		 * saved blocks). */
+		/* stylelint-disable declaration-no-important */
+		&.is-content-justification-center {
+			justify-content: safe center !important;
+		}
+
+		&.is-content-justification-right {
+			justify-content: safe flex-end !important;
+		}
+		/* stylelint-enable declaration-no-important */
 
 		&::-webkit-scrollbar {
 			height: 4px;
