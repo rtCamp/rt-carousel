@@ -69,7 +69,7 @@ Yes. Add a Query Loop inside the Carousel Viewport, and each post becomes a slid
 
 = Is it accessible? =
 
-Yes. The carousel follows W3C accessibility guidelines with proper ARIA roles, labels, and full keyboard navigation. It also respects the reduced-motion setting: slides change without animation and Autoplay / Auto Scroll do not start.
+Yes. The carousel follows W3C accessibility guidelines with proper ARIA roles, labels, and full keyboard navigation. It also respects the reduced-motion setting: slides, dots and the progress bar change without animation, and Autoplay / Auto Scroll do not start.
 
 = Can I have multiple carousels on the same page? =
 

@@ -85,7 +85,7 @@ Do not place Query Loop or Terms Query inside a Carousel Slide block. Their gene
 
 ### Is it accessible?
 
-Yes. The carousel follows W3C accessibility guidelines with proper ARIA roles, labels, and full keyboard navigation support. It also respects the reduced-motion setting: slides change without animation and Autoplay / Auto Scroll do not start.
+Yes. The carousel follows W3C accessibility guidelines with proper ARIA roles, labels, and full keyboard navigation support. It also respects the reduced-motion setting: slides, dots and the progress bar change without animation, and Autoplay / Auto Scroll do not start.
 
 ### Can I have multiple carousels on the same page?
 

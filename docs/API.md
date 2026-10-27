@@ -84,7 +84,7 @@ Gutenberg's `InnerBlocks` can isolate React Contexts, causing state sync issues 
 3. **Bind**: A retry mechanism (`setTimeout` + `useEffect`) ensures the Viewport has finished initializing before binding listeners.
 
 ### Reduced Motion
-When the visitor requests reduced motion (`prefers-reduced-motion: reduce`), slide changes are instant and Autoplay / Auto Scroll do not start. This is applied through Embla `breakpoints`, so it also follows changes to the setting while the page is open.
+When the visitor requests reduced motion (`prefers-reduced-motion: reduce`), slide changes are instant and Autoplay / Auto Scroll do not start. This is applied through Embla `breakpoints`, so it also follows changes to the setting while the page is open. The Dots and Progress blocks drop their CSS transitions under the same media query.
 
 ### Dots Implementation
 The Carousel Dots block demonstrates a pattern for iterating over data with the Interactivity API:
