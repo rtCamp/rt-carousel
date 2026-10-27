@@ -4,7 +4,7 @@ Tags: carousel, slider, block, interactivity-api, embla
 Requires at least: 6.6
 Tested up to: 7.0
 Requires PHP: 8.2
-Stable tag: 2.0.3
+Stable tag: 2.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,17 @@ rtCarousel is the successor to Carousel Kit. Simply install and activate rtCarou
 1. Carousel block in the editor with multiple slides
 
 == Changelog ==
+
+= 2.1.0 =
+* New: add fade transition option.
+* New: add Embla Auto Scroll plugin support with editor controls.
+* New: Add LazyLoadImages toggle to Carousel block with per-slide override option.
+* New: Added carousel tabs mode.
+* Tweak: Add logic to reset autoplay and autoscroll on carousel interaction.
+* Tweak: Fixes issues with tab not able to edit tab title and also removes tab lists when tabs are toggled off.
+* Tweak: Mark query loop slides with the active-slide directives.
+* Tweak: Improve Auto Scroll UX and enforce compatible transition settings.
+* Tweak: Add logic to reset autoplay and autoscroll on carousel interaction.
 
 = 2.0.3 =
 * Tweak: Update plugin display name to a more descriptive title for discoverability.
