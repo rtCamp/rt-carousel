@@ -471,6 +471,20 @@ store( 'rt-carousel/carousel', {
 						context.isPlaying = false;
 					} );
 
+					embla.on( 'autoScroll:play', () => {
+						context.isPlaying = true;
+					} );
+
+					embla.on( 'autoScroll:stop', () => {
+						context.isPlaying = false;
+					} );
+
+					// Auto Scroll emits its first `autoScroll:play` while Embla is
+					// being created, before the listener above is attached.
+					if ( embla.plugins?.()?.autoScroll?.isPlaying() ) {
+						context.isPlaying = true;
+					}
+
 					updateState();
 
 					return () => {
