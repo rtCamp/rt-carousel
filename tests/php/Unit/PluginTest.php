@@ -743,6 +743,25 @@ class PluginTest extends UnitTestCase {
 	}
 
 	/**
+	 * Test that allow_carousel_markup keeps existing validation rules on overlapping attributes.
+	 *
+	 * @return void
+	 */
+	public function test_allow_carousel_markup_preserves_existing_validation_rules(): void {
+		$instance = $this->getPluginInstance();
+		$tags     = [
+			'svg'  => [ 'width' => [ 'maxval' => 100 ] ],
+			'span' => [ 'aria-atomic' => [ 'valueless' => 'n' ] ],
+		];
+
+		$result = $instance->allow_carousel_markup( $tags, 'post' );
+
+		$this->assertSame( [ 'maxval' => 100 ], $result['svg']['width'] );
+		$this->assertSame( [ 'valueless' => 'n' ], $result['span']['aria-atomic'] );
+		$this->assertTrue( $result['svg']['viewbox'] );
+	}
+
+	/**
 	 * Test that allow_carousel_markup leaves other KSES contexts untouched.
 	 *
 	 * @return void

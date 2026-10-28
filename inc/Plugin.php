@@ -428,10 +428,10 @@ class Plugin {
 	 * Without this, the arrow icons, ARIA attributes and Interactivity API templates are stripped,
 	 * which empties the controls and marks the blocks invalid in the editor.
 	 *
-	 * @param array<string, array<string, bool>> $tags    Allowed tags and their attributes.
-	 * @param string|array                       $context KSES context.
+	 * @param array<string, array<string, mixed>> $tags    Allowed tags and their attribute rules.
+	 * @param string|array                        $context KSES context.
 	 *
-	 * @return array<string, array<string, bool>> Filtered allowed tags.
+	 * @return array<string, array<string, mixed>> Filtered allowed tags.
 	 */
 	public function allow_carousel_markup( array $tags, $context ): array {
 		if ( 'post' !== $context ) {
@@ -439,7 +439,8 @@ class Plugin {
 		}
 
 		foreach ( self::KSES_ALLOWED_MARKUP as $tag => $attributes ) {
-			$tags[ $tag ] = array_merge( $tags[ $tag ] ?? [], $attributes );
+			$existing     = isset( $tags[ $tag ] ) && is_array( $tags[ $tag ] ) ? $tags[ $tag ] : [];
+			$tags[ $tag ] = $existing + $attributes;
 		}
 
 		return $tags;
