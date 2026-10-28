@@ -16,3 +16,10 @@
 		transition: transform 0.4s ease-out;
 	}
 }
+
+@media (prefers-reduced-motion: reduce) {
+
+	.rt-carousel-progress__bar {
+		transition: none;
+	}
+}
