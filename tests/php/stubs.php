@@ -39,6 +39,13 @@ if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
 		private int $cursor = -1;
 
 		/**
+		 * @return static Fragment processor.
+		 */
+		public static function create_fragment( string $html ): static {
+			return new static( $html );
+		}
+
+		/**
 		 * @param string $html The HTML markup to process.
 		 */
 		public function __construct( string $html ) {
@@ -68,6 +75,21 @@ if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
 		 */
 		public function get_tag(): ?string {
 			return isset( $this->elements[ $this->cursor ] ) ? strtoupper( $this->elements[ $this->cursor ]->tagName ) : null;
+		}
+
+		/**
+		 * @return array<string> Tag names from fragment root to current element.
+		 */
+		public function get_breadcrumbs(): array {
+			$breadcrumbs = [];
+			$element     = $this->elements[ $this->cursor ];
+
+			while ( $element instanceof \DOMElement ) {
+				array_unshift( $breadcrumbs, strtoupper( $element->tagName ) );
+				$element = $element->parentNode;
+			}
+
+			return $breadcrumbs;
 		}
 
 		/**
@@ -117,4 +139,11 @@ if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
 			return $html;
 		}
 	}
+}
+
+if ( ! class_exists( 'WP_HTML_Processor' ) ) {
+	/**
+	 * Stub for the WordPress HTML processor's fragment and breadcrumb API.
+	 */
+	class WP_HTML_Processor extends WP_HTML_Tag_Processor {}
 }
