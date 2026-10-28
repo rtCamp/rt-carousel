@@ -33,8 +33,7 @@ export type CarouselViewportAttributes = Record<string, never>;
 export type CarouselSlideAttributes = {
 	verticalAlignment?: BlockVerticalAlignmentToolbar.Value;
 };
-export type CarouselControlsPosition = 'below' | 'overlay' | 'outside';
-export type CarouselControlsAttributes = { position: CarouselControlsPosition };
+export type CarouselControlsAttributes = Record<string, never>;
 export type CarouselDotsAttributes = Record<string, never>;
 export type CarouselProgressAttributes = Record<string, never>;
 export type CarouselCounterAttributes = Record<string, never>;

@@ -11,12 +11,7 @@
 	],
 	"description": "Navigation buttons for the carousel.",
 	"textdomain": "rt-carousel",
-	"attributes": {
-		"position": {
-			"type": "string",
-			"default": "below"
-		}
-	},
+	"attributes": {},
 	"supports": {
 		"interactivity": true
 	},

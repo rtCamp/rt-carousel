@@ -154,3 +154,9 @@
 .rt-carousel[data-is-tabs="true"] .embla__slide:not(.is-active) {
 	display: none;
 }
+
+// Editor block wrappers are position: relative, so a nav Group would become the
+// containing block of Overlay / Outside Controls instead of the carousel.
+.rt-carousel .block-editor-block-list__block:has(.rt-carousel-controls.is-style-overlay, .rt-carousel-controls.is-style-outside) {
+	position: static;
+}

@@ -13,6 +13,7 @@ import {
 	CAROUSEL_SLIDE_SELECTOR,
 } from './dynamic-list-selectors';
 import { normalizeContainScroll, applyTransitionOverrides } from './embla-options';
+import { observeViewportBox } from './viewport-box';
 
 type ElementWithRef = {
 	ref?: HTMLElement | null;
@@ -438,6 +439,7 @@ store( 'rt-carousel/carousel', {
 
 					emblaInstances.set( viewport, embla );
 					viewport[ EMBLA_KEY ] = embla;
+					const stopViewportBox = observeViewportBox( viewport );
 
 					const updateState = () => {
 						const previousSelectedIndex = context.selectedIndex;
@@ -488,6 +490,7 @@ store( 'rt-carousel/carousel', {
 					updateState();
 
 					return () => {
+						stopViewportBox();
 						embla.destroy();
 						emblaInstances.delete( viewport );
 						delete viewport[ EMBLA_KEY ];

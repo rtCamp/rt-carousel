@@ -48,22 +48,14 @@
 	transform: rotate(-90deg); // or 270deg
 }
 
-/**
- * Arrow position options (issue #143).
- *
- * `below` (default) uses the base flex row above — no overrides here.
- * `overlay` floats the arrows over the slide edges; `outside` reserves side
- * gutters so the arrows flank the slides. Both are horizontal-only: vertical
- * carousels keep the stacked "below" behavior.
- */
-
-// Shared overlay/outside behavior: absolutely position within .rt-carousel
-// (already position: relative), split the buttons to the edges, and let clicks
-// pass through the gaps to the slides underneath.
-.rt-carousel:not([data-axis="y"]) .rt-carousel-controls.is-position-overlay,
-.rt-carousel:not([data-axis="y"]) .rt-carousel-controls.is-position-outside {
+// Overlay / Outside styles (#143): sized from the slides by
+// observeViewportBox(), so a nav row below does not shift them.
+:where(.rt-carousel:not([data-axis="y"])) .rt-carousel-controls.is-style-overlay,
+:where(.rt-carousel:not([data-axis="y"])) .rt-carousel-controls.is-style-outside {
 	position: absolute;
-	inset: 0;
+	inset-inline: 0;
+	inset-block-start: var(--rt-carousel-viewport-offset, 0);
+	block-size: var(--rt-carousel-viewport-block-size, 100%);
 	z-index: var(--rt-carousel-control-z, 1);
 	display: flex;
 	align-items: center;
@@ -71,30 +63,22 @@
 	pointer-events: none;
 }
 
-.rt-carousel-controls.is-position-overlay .rt-carousel-controls__btn,
-.rt-carousel-controls.is-position-outside .rt-carousel-controls__btn {
+.rt-carousel-controls.is-style-overlay .rt-carousel-controls__btn,
+.rt-carousel-controls.is-style-outside .rt-carousel-controls__btn {
 	pointer-events: auto;
 }
 
-// Overlay: arrows sit just inside the slide edges.
-.rt-carousel:not([data-axis="y"]) .rt-carousel-controls.is-position-overlay {
+:where(.rt-carousel:not([data-axis="y"])) .rt-carousel-controls.is-style-overlay {
 	padding-inline: var(--rt-carousel-control-inset, 0.5rem);
 }
 
-// Outside: add side gutters to the carousel so the slide viewport shrinks and
-// the edge-anchored arrows land beside (not over) the slides.
-.rt-carousel:not([data-axis="y"]):has(
-.rt-carousel-controls.is-position-outside
-) {
+.rt-carousel:where(:not([data-axis="y"]):has(.rt-carousel-controls.is-style-outside)) {
 	padding-inline: var(--rt-carousel-control-gutter, 3rem);
 }
 
-// Keep gutters usable on small screens.
 @media (max-width: 600px) {
 
-	.rt-carousel:not([data-axis="y"]):has(
-	.rt-carousel-controls.is-position-outside
-) {
+	.rt-carousel:where(:not([data-axis="y"]):has(.rt-carousel-controls.is-style-outside)) {
 		padding-inline: var(--rt-carousel-control-gutter-mobile, 2.25rem);
 	}
 }

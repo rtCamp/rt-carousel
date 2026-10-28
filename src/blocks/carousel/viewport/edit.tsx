@@ -18,6 +18,7 @@ import Fade from 'embla-carousel-fade';
 import { useCarouselObservers } from '../hooks/useCarouselObservers';
 import { DYNAMIC_LIST_CONTAINER_SELECTOR } from '../dynamic-list-selectors';
 import { normalizeContainScroll, applyTransitionOverrides } from '../embla-options';
+import { observeViewportBox } from '../viewport-box';
 
 const EMBLA_KEY = Symbol.for( 'carousel-system.carousel' );
 
@@ -270,6 +271,7 @@ export default function Edit( {
 
 		// Run initial setup.
 		init();
+		const stopViewportBox = observeViewportBox( viewport );
 
 		// Keep ref in sync so observer hooks always call the latest init.
 		initEmblaRef.current = init;
@@ -306,6 +308,7 @@ export default function Edit( {
 				cancelAnimationFrame( scrollResetRafId );
 			}
 			viewport.removeEventListener( 'scroll', resetNativeScroll );
+			stopViewportBox();
 			embla?.destroy();
 			emblaApiRef.current = undefined;
 			delete ( viewport as { [EMBLA_KEY]?: typeof embla } )[ EMBLA_KEY ];
