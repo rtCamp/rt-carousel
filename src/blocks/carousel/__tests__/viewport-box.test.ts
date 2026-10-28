@@ -51,13 +51,53 @@ describe( 'observeViewportBox', () => {
 			'<div class="embla__slide"><figure></figure></div><div class="embla__slide"><p></p></div>';
 		const figure = viewport.querySelector( 'figure' )!;
 		const paragraph = viewport.querySelector( 'p' )!;
-		jest.spyOn( figure, 'getBoundingClientRect' ).mockReturnValue( { bottom: 124 + 77 } as DOMRect );
-		jest.spyOn( paragraph, 'getBoundingClientRect' ).mockReturnValue( { bottom: 124 + 40 } as DOMRect );
+		jest.spyOn( figure, 'getBoundingClientRect' ).mockReturnValue( { top: 124, bottom: 124 + 77, height: 77 } as DOMRect );
+		jest.spyOn( paragraph, 'getBoundingClientRect' ).mockReturnValue( { top: 124, bottom: 124 + 40, height: 40 } as DOMRect );
 
 		observeViewportBox( viewport );
 
 		expect( root.style.getPropertyValue( '--rt-carousel-viewport-block-size' ) ).toBe( '77px' );
-		expect( observed ).toEqual( [ viewport, root, figure, paragraph ] );
+		expect( observed ).toEqual( [ viewport, root, figure, paragraph, figure, paragraph ] );
+	} );
+
+	it( 'starts the box at the highest slide content', () => {
+		const { root, viewport } = setup();
+		viewport.innerHTML = '<div class="embla__slide"><h2></h2><p></p></div>';
+		const heading = viewport.querySelector( 'h2' )!;
+		const paragraph = viewport.querySelector( 'p' )!;
+		jest.spyOn( heading, 'getBoundingClientRect' ).mockReturnValue( { top: 124 + 80, bottom: 124 + 100, height: 20 } as DOMRect );
+		jest.spyOn( paragraph, 'getBoundingClientRect' ).mockReturnValue( { top: 124 + 100, bottom: 124 + 120, height: 20 } as DOMRect );
+
+		observeViewportBox( viewport );
+
+		expect( root.style.getPropertyValue( '--rt-carousel-viewport-offset' ) ).toBe( '104px' );
+		expect( root.style.getPropertyValue( '--rt-carousel-viewport-block-size' ) ).toBe( '40px' );
+	} );
+
+	it( 'ignores hidden slides', () => {
+		const { root, viewport } = setup();
+		viewport.innerHTML =
+			'<div class="embla__slide"><p class="shown"></p></div><div class="embla__slide"><p class="hidden"></p></div>';
+		const shown = viewport.querySelector( '.shown' )!;
+		const hidden = viewport.querySelector( '.hidden' )!;
+		jest.spyOn( shown, 'getBoundingClientRect' ).mockReturnValue( { top: 124 + 80, bottom: 124 + 120, height: 40 } as DOMRect );
+		jest.spyOn( hidden, 'getBoundingClientRect' ).mockReturnValue( { top: 0, bottom: 0, height: 0, width: 0 } as DOMRect );
+
+		observeViewportBox( viewport );
+
+		expect( root.style.getPropertyValue( '--rt-carousel-viewport-offset' ) ).toBe( '104px' );
+		expect( root.style.getPropertyValue( '--rt-carousel-viewport-block-size' ) ).toBe( '40px' );
+	} );
+
+	it( 'resyncs after child-list changes in the carousel', async () => {
+		const { root, viewport } = setup();
+		observeViewportBox( viewport );
+
+		Object.defineProperty( viewport, 'offsetHeight', { configurable: true, value: 150 } );
+		root.appendChild( document.createElement( 'div' ) );
+		await new Promise( ( resolve ) => setTimeout( resolve, 50 ) );
+
+		expect( root.style.getPropertyValue( '--rt-carousel-viewport-block-size' ) ).toBe( '150px' );
 	} );
 
 	it( 'updates when the observer fires', () => {
@@ -73,9 +113,13 @@ describe( 'observeViewportBox', () => {
 	it( 'disconnects on cleanup', () => {
 		const { viewport } = setup();
 
+		const stopMutations = jest.spyOn( MutationObserver.prototype, 'disconnect' );
+
 		observeViewportBox( viewport )();
 
 		expect( disconnect ).toHaveBeenCalled();
+		expect( stopMutations ).toHaveBeenCalled();
+		stopMutations.mockRestore();
 	} );
 
 	it( 'does nothing outside a carousel', () => {

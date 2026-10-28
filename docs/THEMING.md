@@ -24,7 +24,7 @@ Easily theme the carousel using CSS variables or block supports. Navigation bloc
 | `--rt-carousel-control-color-hover`     | `inherit`                             | Icon color on hover         |
 | `--rt-carousel-control-inset`           | `0.5rem`                              | Overlay style: gap between arrows and slide edges |
 | `--rt-carousel-control-gutter`          | `3rem`                                | Outside style: side gutter width |
-| `--rt-carousel-control-gutter-mobile`   | `2.25rem`                             | Outside style: gutter width at 600px and below |
+| `--rt-carousel-control-gutter-mobile`   | `--rt-carousel-control-size` + `0.25rem` | Outside style: gutter width at 600px and below |
 | `--rt-carousel-control-z`               | `1`                                   | Overlay / Outside style: stacking order above slides |
 
 ### Dots (Pagination)

@@ -73,12 +73,13 @@
 }
 
 .rt-carousel:where(:not([data-axis="y"]):has(.rt-carousel-controls.is-style-outside)) {
+	box-sizing: border-box;
 	padding-inline: var(--rt-carousel-control-gutter, 3rem);
 }
 
 @media (max-width: 600px) {
 
 	.rt-carousel:where(:not([data-axis="y"]):has(.rt-carousel-controls.is-style-outside)) {
-		padding-inline: var(--rt-carousel-control-gutter-mobile, 2.25rem);
+		padding-inline: var(--rt-carousel-control-gutter-mobile, calc(var(--rt-carousel-control-size, 2.5rem) + 0.25rem));
 	}
 }
