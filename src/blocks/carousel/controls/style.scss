@@ -47,3 +47,39 @@
 .rt-carousel[data-axis="y"][dir="rtl"] .rt-carousel-controls__btn svg {
 	transform: rotate(-90deg); // or 270deg
 }
+
+// Overlay / Outside styles (#143): sized from the slides by
+// observeViewportBox(), so a nav row below does not shift them.
+:where(.rt-carousel:not([data-axis="y"])) .rt-carousel-controls.is-style-overlay,
+:where(.rt-carousel:not([data-axis="y"])) .rt-carousel-controls.is-style-outside {
+	position: absolute;
+	inset-inline: 0;
+	inset-block-start: var(--rt-carousel-viewport-offset, 0);
+	block-size: var(--rt-carousel-viewport-block-size, 100%);
+	z-index: var(--rt-carousel-control-z, 1);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	pointer-events: none;
+}
+
+.rt-carousel-controls.is-style-overlay .rt-carousel-controls__btn,
+.rt-carousel-controls.is-style-outside .rt-carousel-controls__btn {
+	pointer-events: auto;
+}
+
+:where(.rt-carousel:not([data-axis="y"])) .rt-carousel-controls.is-style-overlay {
+	padding-inline: var(--rt-carousel-control-inset, 0.5rem);
+}
+
+.rt-carousel:where(:not([data-axis="y"]):has(.rt-carousel-controls.is-style-outside)) {
+	box-sizing: border-box;
+	padding-inline: var(--rt-carousel-control-gutter, 3rem);
+}
+
+@media (max-width: 600px) {
+
+	.rt-carousel:where(:not([data-axis="y"]):has(.rt-carousel-controls.is-style-outside)) {
+		padding-inline: var(--rt-carousel-control-gutter-mobile, calc(var(--rt-carousel-control-size, 2.5rem) + 0.25rem));
+	}
+}
