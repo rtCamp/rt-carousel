@@ -11,6 +11,7 @@ namespace Rt_Carousel;
 
 use Rt_Carousel\Traits\Singleton;
 use WP_Block;
+use WP_HTML_Processor;
 use WP_HTML_Tag_Processor;
 
 // Exit if accessed directly.
@@ -268,7 +269,10 @@ class Plugin {
 	}
 
 	/**
-	 * Add loading="lazy" to images in carousel slides.
+	 * Set loading and fetch priority on images in carousel slides.
+	 *
+	 * Static and Query Loop/Terms Query slides are detected independently in one
+	 * HTML pass; the image attribute policy is shared by both slide types.
 	 *
 	 * @param string         $block_content The block content.
 	 * @param array          $parsed_block  The parsed block.
@@ -294,33 +298,173 @@ class Plugin {
 			return $block_content;
 		}
 
-		// Use WP_HTML_Tag_Processor to add loading="lazy" to <img> tags.
-		$processor   = new WP_HTML_Tag_Processor( $block_content );
-		$slide_index = 0;
+		// WordPress 6.6, the plugin's floor, always has the HTML Processor. Only it reports nesting depth;
+		// without it slides cannot be told apart from nested markup, so leave the content unchanged.
+		if ( ! class_exists( WP_HTML_Processor::class ) ) {
+			return $block_content;
+		}
+
+		$processor = WP_HTML_Processor::create_fragment( $block_content );
+
+		if ( null === $processor ) {
+			return $block_content;
+		}
+
+		/*
+		 * The HTML Processor only reports opening tags, never "this element closed".
+		 * Nesting depth (count of breadcrumbs) is the only way to know a scope ended,
+		 * so each tracker remembers two depths. Zero means "not inside one".
+		 *
+		 * - track_depth: depth of the container whose direct children are slides
+		 *   (.embla__container, or the post/term template list). It decides what counts
+		 *   as a slide (exactly one level below) and when we have left the carousel
+		 *   (a tag at this depth or shallower).
+		 *
+		 * - slide_depth: depth of the slide currently being walked. An <img> is only
+		 *   changed while this is set, so images sitting between slides are skipped.
+		 *
+		 * - index: one-based position of the current slide within its track.
+		 */
+		$static  = [
+			'track_depth' => 0,
+			'slide_depth' => 0,
+			'index'       => 0,
+		];
+		$dynamic = [
+			'track_depth' => 0,
+			'slide_depth' => 0,
+			'index'       => 0,
+			'class'       => '',
+		];
 
 		while ( $processor->next_tag() ) {
-			$tag = $processor->get_tag();
+			$static_index  = $this->get_static_slide_index( $processor, $static );
+			$dynamic_index = $this->get_dynamic_slide_index( $processor, $static, $dynamic );
 
-			// Keep a track of the slide index to determine if an image is in the first slide or subsequent slides.
-			if ( 'DIV' === $tag && $processor->has_class( 'embla__slide' ) ) {
-				++$slide_index;
-			}
-
-			if ( 'IMG' !== $tag || null !== $processor->get_attribute( 'loading' ) ) {
+			if ( 'IMG' !== $processor->get_tag() ) {
 				continue;
 			}
 
-			// The first slide's image loads eager (LCP); subsequent slides load lazy.
-			if ( 1 === $slide_index ) {
-				$processor->set_attribute( 'loading', 'eager' );
-				$processor->set_attribute( 'fetchpriority', 'high' );
+			// A query inside a static slide uses its own slide order, not its parent's order.
+			$index = $dynamic['track_depth'] ? $dynamic_index : $static_index;
+			if ( null === $index ) {
 				continue;
 			}
 
-			$processor->set_attribute( 'loading', 'lazy' );
+			$this->set_slide_image_loading( $processor, $index );
 		}
 
 		return $processor->get_updated_html();
+	}
+
+	/**
+	 * Track direct static slides inside the carousel container.
+	 *
+	 * Ignore wrappers and images between slides; only direct .embla__slide
+	 * children count. Reset position when traversal leaves the container.
+	 *
+	 * @param \WP_HTML_Processor $processor Current HTML processor.
+	 * @param array              $state     Static track position.
+	 * @return int|null Slide index for an image in a static slide.
+	 */
+	private function get_static_slide_index( WP_HTML_Processor $processor, array &$state ): ?int {
+		$tag   = $processor->get_tag();
+		$depth = count( $processor->get_breadcrumbs() );
+
+		// A tag at or above the container's depth means we left the carousel: forget both scopes.
+		if ( $state['track_depth'] && $depth <= $state['track_depth'] ) {
+			$state['track_depth'] = 0;
+			$state['slide_depth'] = 0;
+		}
+
+		// A tag at or above the slide's depth means that slide ended (next sibling or track end).
+		if ( $state['slide_depth'] && $depth <= $state['slide_depth'] ) {
+			$state['slide_depth'] = 0;
+		}
+
+		// Entering the container: remember its depth so slides can be recognised relative to it.
+		if ( ! $state['track_depth'] && 'DIV' === $tag && $processor->has_class( 'embla__container' ) ) {
+			$state['track_depth'] = $depth;
+			$state['index']       = 0;
+		}
+
+		// Only a direct child (track_depth + 1) is a slide; remember its depth until it ends.
+		if ( $state['track_depth'] && $depth === $state['track_depth'] + 1 && 'DIV' === $tag && $processor->has_class( 'embla__slide' ) ) {
+			++$state['index'];
+			$state['slide_depth'] = $depth;
+		}
+
+		// Report an index only for images inside a slide, not for images directly in the track.
+		return 'IMG' === $tag && $state['slide_depth'] ? $state['index'] : null;
+	}
+
+	/**
+	 * Track Query Loop and Terms Query list items without counting nested list items as slides.
+	 *
+	 * A template can sit directly in the container (dynamic carousel) or
+	 * inside the first static slide (saved Query Loop pattern).
+	 *
+	 * @param \WP_HTML_Processor $processor    Current HTML processor.
+	 * @param array              $static_state Static track position.
+	 * @param array              $state        Dynamic track position.
+	 * @return int|null Slide index for an image in a dynamic slide.
+	 */
+	private function get_dynamic_slide_index( WP_HTML_Processor $processor, array $static_state, array &$state ): ?int {
+		$tag   = $processor->get_tag();
+		$depth = count( $processor->get_breadcrumbs() );
+
+		// Same scoping as the static track: depth at or above the list means the query list ended.
+		if ( $state['track_depth'] && $depth <= $state['track_depth'] ) {
+			$state['track_depth'] = 0;
+		}
+
+		// Depth at or above the current list item means that post/term slide ended.
+		if ( $state['slide_depth'] && $depth <= $state['slide_depth'] ) {
+			$state['slide_depth'] = 0;
+		}
+
+		// Entering a query list: track_depth is the list's depth. Do not treat a query nested in a later static slide as another first slide.
+		if ( $static_state['track_depth'] && ! $state['track_depth'] && 'UL' === $tag && ( $processor->has_class( 'wp-block-post-template' ) || $processor->has_class( 'wp-block-term-template' ) ) && ( 0 === $static_state['index'] || 1 === $static_state['index'] ) ) {
+			$state['track_depth'] = $depth;
+			$state['slide_depth'] = 0;
+			$state['index']       = 0;
+			$state['class']       = $processor->has_class( 'wp-block-post-template' ) ? 'wp-block-post' : 'wp-block-term';
+		}
+
+		// Only a direct child of the list (track_depth + 1) is a slide, so nested list items
+		// inside a post do not advance the index. slide_depth marks where this item ends.
+		if ( $state['track_depth'] && $depth === $state['track_depth'] + 1 && 'LI' === $tag && $processor->has_class( $state['class'] ) ) {
+			++$state['index'];
+			$state['slide_depth'] = $depth;
+		}
+
+		return 'IMG' === $tag && $state['slide_depth'] ? $state['index'] : null;
+	}
+
+	/**
+	 * Apply shared image loading policy after slide detection.
+	 *
+	 * The first slide overrides loading="lazy" inserted by WordPress, but keeps
+	 * an explicitly chosen fetch priority; later slides keep explicit loading.
+	 *
+	 * @param \WP_HTML_Processor $processor Current image tag.
+	 * @param int                $index     One-based slide index.
+	 * @return void
+	 */
+	private function set_slide_image_loading( WP_HTML_Processor $processor, int $index ): void {
+		if ( 1 === $index ) {
+			$processor->set_attribute( 'loading', 'eager' );
+			if ( null === $processor->get_attribute( 'fetchpriority' ) ) {
+				$processor->set_attribute( 'fetchpriority', 'high' );
+			}
+			return;
+		}
+
+		if ( null !== $processor->get_attribute( 'loading' ) ) {
+			return;
+		}
+
+		$processor->set_attribute( 'loading', 'lazy' );
 	}
 
 	/**
@@ -338,9 +482,9 @@ class Plugin {
 			return $block_content;
 		}
 
-		// WordPress 6.6, the plugin's floor, always has the HTML Processor; the unit harness stubs only the Tag Processor.
-		$processor = class_exists( \WP_HTML_Processor::class )
-			? \WP_HTML_Processor::create_fragment( $block_content )
+		// WordPress 6.6, the plugin's floor, always has the HTML Processor; the Tag Processor fallback keeps this working without it.
+		$processor = class_exists( WP_HTML_Processor::class )
+			? WP_HTML_Processor::create_fragment( $block_content )
 			: new WP_HTML_Tag_Processor( $block_content );
 
 		if ( null === $processor ) {
@@ -366,7 +510,7 @@ class Plugin {
 
 			// Depth one is the carousel's own track; a loop nested inside a slide keeps its items untouched.
 			if (
-				$processor instanceof \WP_HTML_Processor
+				$processor instanceof WP_HTML_Processor
 				&& 1 !== count( array_keys( $processor->get_breadcrumbs(), 'LI', true ) )
 			) {
 				continue;

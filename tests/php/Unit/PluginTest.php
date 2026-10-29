@@ -33,6 +33,7 @@ class PluginTest extends UnitTestCase {
 	 */
 	private const EXPECTED_BLOCKS = [
 		'carousel',
+		'carousel/carousel-tab-list',
 		'carousel/controls',
 		'carousel/counter',
 		'carousel/dots',
@@ -151,7 +152,7 @@ class PluginTest extends UnitTestCase {
 		$instance = $this->getPluginInstance();
 		$this->invokeMethod( $instance, 'register_blocks' );
 
-		$this->assertCount( 7, $registered_blocks );
+		$this->assertCount( 8, $registered_blocks );
 
 		// Verify each expected block is registered
 		foreach ( self::EXPECTED_BLOCKS as $block ) {
@@ -174,7 +175,7 @@ class PluginTest extends UnitTestCase {
 	public function test_register_blocks_handles_missing_build_path(): void {
 		// The actual behavior check: register_block_type should be called
 		// for each block when the constant is defined (as it is in our tests).
-		Functions\expect( 'register_block_type' )->times( 7 );
+		Functions\expect( 'register_block_type' )->times( 8 );
 
 		$instance = $this->getPluginInstance();
 		$this->invokeMethod( $instance, 'register_blocks' );
@@ -585,7 +586,7 @@ class PluginTest extends UnitTestCase {
 	 */
 	public function test_handle_lazy_load_images_returns_unmodified_when_disabled(): void {
 		$instance = $this->getPluginInstance();
-		$content  = '<div class="embla__slide"><img src="a.jpg" /></div>';
+		$content  = '<div class="embla__container"><div class="embla__slide"><img src="a.jpg" loading="lazy" /></div></div>';
 		$block    = new \WP_Block( [ 'lazyLoadImages' => false ] );
 
 		$result = $instance->handle_lazy_load_images( $content, [], $block );
@@ -600,8 +601,8 @@ class PluginTest extends UnitTestCase {
 	 */
 	public function test_handle_lazy_load_images_sets_eager_on_first_slide_and_lazy_on_rest(): void {
 		$instance = $this->getPluginInstance();
-		$content  = '<div class="embla__slide"><img src="a.jpg" /></div>'
-			. '<div class="embla__slide"><img src="b.jpg" /></div>';
+		$content  = '<div class="embla__container"><div class="embla__slide"><img src="a.jpg" /></div>'
+			. '<div class="embla__slide"><img src="b.jpg" /></div></div>';
 		$block    = new \WP_Block( [ 'lazyLoadImages' => true ] );
 
 		$result = $instance->handle_lazy_load_images( $content, [], $block );
@@ -612,19 +613,132 @@ class PluginTest extends UnitTestCase {
 	}
 
 	/**
-	 * Test that an image with an existing loading attribute is left untouched.
+	 * Test that a later image with an existing loading attribute is left untouched.
 	 *
 	 * @return void
 	 */
 	public function test_handle_lazy_load_images_does_not_override_existing_loading_attribute(): void {
 		$instance = $this->getPluginInstance();
-		$content  = '<div class="embla__slide"><img src="a.jpg" loading="eager" /></div>';
+		$content  = '<div class="embla__container"><div class="embla__slide"><img src="a.jpg" /></div>'
+			. '<div class="embla__slide"><img src="b.jpg" loading="eager" /></div></div>';
 		$block    = new \WP_Block( [ 'lazyLoadImages' => true ] );
 
 		$result = $instance->handle_lazy_load_images( $content, [], $block );
 
-		$this->assertStringNotContainsString( 'fetchpriority', $result );
-		$this->assertMatchesRegularExpression( '/src="a\.jpg"[^>]*loading="eager"/', $result );
+		$this->assertMatchesRegularExpression( '/src="b\.jpg"[^>]*loading="eager"/', $result );
+		$this->assertSame( 1, substr_count( $result, 'fetchpriority="high"' ) );
+	}
+
+	/**
+	 * Dynamic slide wrappers are direct children of their respective tracks.
+	 *
+	 * @return void
+	 */
+	public function test_handle_lazy_load_images_handles_post_and_term_slides(): void {
+		$instance = $this->getPluginInstance();
+		$block    = new \WP_Block( [ 'lazyLoadImages' => true ] );
+
+		foreach ( [ 'post', 'term' ] as $type ) {
+			$content = '<div class="embla__container"><div class="wp-block-' . $type . '-query"><ul class="wp-block-' . $type . '-template">'
+				. '<li class="wp-block-' . $type . '"><figure><img src="first.jpg" loading="lazy" alt="First" fetchpriority="low"></figure>'
+				. '<ul><li class="wp-block-' . $type . '"><img src="nested.jpg"></li></ul></li>'
+				. '<li class="wp-block-' . $type . '"><img src="second.jpg">'
+				. '<ul class="wp-block-' . $type . '-template"><li class="wp-block-' . $type . '"><img src="nested-second.jpg"></li></ul>'
+				. '</li></ul></div></div>';
+			$result  = $instance->handle_lazy_load_images( $content, [], $block );
+
+			$this->assertMatchesRegularExpression( '/src="first\.jpg"[^>]*loading="eager"[^>]*alt="First"[^>]*fetchpriority="low"/', $result );
+			$this->assertMatchesRegularExpression( '/src="nested\.jpg"[^>]*loading="eager"/', $result );
+			$this->assertMatchesRegularExpression( '/src="second\.jpg"[^>]*loading="lazy"/', $result );
+			$this->assertMatchesRegularExpression( '/src="nested-second\.jpg"[^>]*loading="lazy"/', $result );
+			$this->assertSame( 1, substr_count( $result, 'fetchpriority="low"' ) );
+		}
+	}
+
+	/**
+	 * WordPress may already have lazy-loaded the first dynamic slide image.
+	 *
+	 * @return void
+	 */
+	public function test_handle_lazy_load_images_promotes_first_dynamic_image_with_no_fetchpriority(): void {
+		$instance = $this->getPluginInstance();
+		$block    = new \WP_Block( [ 'lazyLoadImages' => true ] );
+
+		foreach ( [ 'post', 'term' ] as $type ) {
+			$content = '<div class="embla__container"><div class="wp-block-' . $type . '-query"><ul class="wp-block-' . $type . '-template">'
+				. '<li class="wp-block-' . $type . '"><img src="first.jpg" loading="lazy" alt="First"></li>'
+				. '<li class="wp-block-' . $type . '"><img src="second.jpg"></li></ul></div></div>';
+			$result  = $instance->handle_lazy_load_images( $content, [], $block );
+
+			$this->assertMatchesRegularExpression( '/src="first\.jpg"[^>]*loading="eager"[^>]*alt="First"[^>]*fetchpriority="high"/', $result );
+			$this->assertMatchesRegularExpression( '/src="second\.jpg"[^>]*loading="lazy"/', $result );
+		}
+	}
+
+	/**
+	 * The first static image is promoted even when core already assigned lazy loading.
+	 *
+	 * @return void
+	 */
+	public function test_handle_lazy_load_images_promotes_existing_first_loading(): void {
+		$instance = $this->getPluginInstance();
+		$content  = '<div class="embla__container"><div class="embla__slide"><img src="first.jpg" loading="lazy" alt="First"></div></div>';
+		$result   = $instance->handle_lazy_load_images( $content, [], new \WP_Block( [ 'lazyLoadImages' => true ] ) );
+
+		$this->assertMatchesRegularExpression( '/src="first\.jpg"[^>]*loading="eager"[^>]*alt="First"[^>]*fetchpriority="high"/', $result );
+	}
+
+	/**
+	 * Query patterns place the dynamic template inside a static slide wrapper.
+	 *
+	 * @return void
+	 */
+	public function test_handle_lazy_load_images_handles_dynamic_track_inside_static_slide(): void {
+		$instance = $this->getPluginInstance();
+		$content  = '<div class="embla__container"><div class="embla__slide"><ul class="wp-block-post-template">'
+			. '<li class="wp-block-post"><img src="first.jpg" loading="lazy"></li>'
+			. '<li class="wp-block-post"><img src="second.jpg"></li></ul></div>'
+			. '<div class="embla__slide"><img src="third.jpg"></div></div>';
+		$result   = $instance->handle_lazy_load_images( $content, [], new \WP_Block( [ 'lazyLoadImages' => true ] ) );
+
+		$this->assertMatchesRegularExpression( '/src="first\.jpg"[^>]*loading="eager"/', $result );
+		$this->assertMatchesRegularExpression( '/src="second\.jpg"[^>]*loading="lazy"/', $result );
+		$this->assertMatchesRegularExpression( '/src="third\.jpg"[^>]*loading="lazy"/', $result );
+	}
+
+	/**
+	 * Only images inside direct slide children of the carousel track are changed.
+	 *
+	 * @return void
+	 */
+	public function test_handle_lazy_load_images_ignores_images_outside_slide_track(): void {
+		$instance = $this->getPluginInstance();
+		$content  = '<img src="outside.jpg"><ul class="wp-block-post-template"><li class="wp-block-post"><img src="unrelated.jpg"></li></ul>'
+			. '<div class="embla__container"><div class="wrapper"><div class="embla__slide"><img src="wrapped.jpg"></div></div>'
+			. '<div class="embla__slide"><img src="first.jpg"></div><img src="between.jpg"></div><img src="after.jpg">';
+		$result   = $instance->handle_lazy_load_images( $content, [], new \WP_Block( [ 'lazyLoadImages' => true ] ) );
+
+		foreach ( [ 'outside', 'unrelated', 'wrapped', 'between', 'after' ] as $src ) {
+			$this->assertMatchesRegularExpression( '/src="' . $src . '\.jpg"(?![^>]*loading=)[^>]*>/', $result );
+		}
+		$this->assertMatchesRegularExpression( '/src="first\.jpg"[^>]*loading="eager"/', $result );
+	}
+
+	/**
+	 * A nested query inside a later static slide must not promote its first post.
+	 *
+	 * @return void
+	 */
+	public function test_handle_lazy_load_images_keeps_nested_query_in_later_slide_lazy(): void {
+		$instance = $this->getPluginInstance();
+		$content  = '<div class="embla__container"><div class="embla__slide"><img src="first.jpg"></div>'
+			. '<div class="embla__slide"><ul class="wp-block-post-template">'
+			. '<li class="wp-block-post"><img src="nested.jpg" loading="lazy"></li></ul></div></div>';
+		$result   = $instance->handle_lazy_load_images( $content, [], new \WP_Block( [ 'lazyLoadImages' => true ] ) );
+
+		$this->assertMatchesRegularExpression( '/src="first\.jpg"[^>]*loading="eager"/', $result );
+		$this->assertMatchesRegularExpression( '/src="nested\.jpg"[^>]*loading="lazy"/', $result );
+		$this->assertSame( 1, substr_count( $result, 'fetchpriority="high"' ) );
 	}
 
 	/**
