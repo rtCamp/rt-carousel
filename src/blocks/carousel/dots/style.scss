@@ -22,3 +22,10 @@
 	background-color: var(--rt-carousel-dot-active-color, rgba(28, 28, 28, 1));
 	transform: scale(var(--rt-carousel-dot-active-scale, 1.5));
 }
+
+@media (prefers-reduced-motion: reduce) {
+
+	.rt-carousel-dot {
+		transition: none;
+	}
+}
