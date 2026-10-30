@@ -695,4 +695,83 @@ class PluginTest extends UnitTestCase {
 		$this->assertSame( 1, substr_count( $result, 'data-wp-interactive="rt-carousel/carousel"' ) );
 		$this->assertSame( 1, substr_count( $result, 'data-wp-bind--aria-current="callbacks.isSlideActive"' ) );
 	}
+
+	/**
+	 * Test that allow_carousel_markup adds the carousel tags and attributes in the post context.
+	 *
+	 * @return void
+	 */
+	public function test_allow_carousel_markup_adds_carousel_markup_for_post_context(): void {
+		$instance = $this->getPluginInstance();
+
+		$result = $instance->allow_carousel_markup( [], 'post' );
+
+		$this->assertTrue( $result['svg']['viewbox'] );
+		$this->assertTrue( $result['svg']['class'] );
+		$this->assertTrue( $result['path']['d'] );
+		$this->assertTrue( $result['template']['data-*'] );
+		$this->assertTrue( $result['div']['aria-roledescription'] );
+		$this->assertTrue( $result['div']['aria-valuemin'] );
+		$this->assertTrue( $result['div']['aria-valuemax'] );
+		$this->assertTrue( $result['span']['aria-atomic'] );
+	}
+
+	/**
+	 * Test that allow_carousel_markup keeps the attributes already allowed on a tag.
+	 *
+	 * @return void
+	 */
+	public function test_allow_carousel_markup_preserves_existing_attributes(): void {
+		$instance = $this->getPluginInstance();
+		$tags     = [
+			'div' => [
+				'class' => true,
+				'role'  => true,
+			],
+			'svg' => [ 'stroke' => true ],
+			'p'   => [ 'align' => true ],
+		];
+
+		$result = $instance->allow_carousel_markup( $tags, 'post' );
+
+		$this->assertTrue( $result['div']['class'] );
+		$this->assertTrue( $result['div']['role'] );
+		$this->assertTrue( $result['div']['aria-roledescription'] );
+		$this->assertTrue( $result['svg']['stroke'] );
+		$this->assertTrue( $result['svg']['viewbox'] );
+		$this->assertSame( [ 'align' => true ], $result['p'] );
+	}
+
+	/**
+	 * Test that allow_carousel_markup keeps existing validation rules on overlapping attributes.
+	 *
+	 * @return void
+	 */
+	public function test_allow_carousel_markup_preserves_existing_validation_rules(): void {
+		$instance = $this->getPluginInstance();
+		$tags     = [
+			'svg'  => [ 'width' => [ 'maxval' => 100 ] ],
+			'span' => [ 'aria-atomic' => [ 'valueless' => 'n' ] ],
+		];
+
+		$result = $instance->allow_carousel_markup( $tags, 'post' );
+
+		$this->assertSame( [ 'maxval' => 100 ], $result['svg']['width'] );
+		$this->assertSame( [ 'valueless' => 'n' ], $result['span']['aria-atomic'] );
+		$this->assertTrue( $result['svg']['viewbox'] );
+	}
+
+	/**
+	 * Test that allow_carousel_markup leaves other KSES contexts untouched.
+	 *
+	 * @return void
+	 */
+	public function test_allow_carousel_markup_ignores_other_contexts(): void {
+		$instance = $this->getPluginInstance();
+		$tags     = [ 'a' => [ 'href' => true ] ];
+
+		$this->assertSame( $tags, $instance->allow_carousel_markup( $tags, 'pre_comment_content' ) );
+		$this->assertSame( $tags, $instance->allow_carousel_markup( $tags, 'strip' ) );
+		$this->assertSame( $tags, $instance->allow_carousel_markup( $tags, [ 'a' => [] ] ) );
+	}
 }

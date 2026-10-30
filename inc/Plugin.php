@@ -25,6 +25,46 @@ class Plugin {
 	use Singleton;
 
 	/**
+	 * Tags and attributes the carousel blocks save that KSES strips by default.
+	 *
+	 * Attribute names are lowercase because KSES lowercases them before the lookup.
+	 * See: https://github.com/rtCamp/rt-carousel/issues/218
+	 *
+	 * @var array<string, array<string, bool>>
+	 */
+	private const KSES_ALLOWED_MARKUP = [
+		// Controls: previous/next arrow icons.
+		'svg'      => [
+			'class'       => true,
+			'width'       => true,
+			'height'      => true,
+			'viewbox'     => true,
+			'fill'        => true,
+			'xmlns'       => true,
+			'aria-hidden' => true,
+			'focusable'   => true,
+		],
+		'path'     => [
+			'd'    => true,
+			'fill' => true,
+		],
+		// Dots and Tab List: the data-wp-each wrapper.
+		'template' => [
+			'data-*' => true,
+		],
+		// Carousel and Slide roles, Progress bar range.
+		'div'      => [
+			'aria-roledescription' => true,
+			'aria-valuemin'        => true,
+			'aria-valuemax'        => true,
+		],
+		// Carousel screen-reader live region.
+		'span'     => [
+			'aria-atomic' => true,
+		],
+	];
+
+	/**
 	 * Plugin constructor.
 	 */
 	protected function __construct() {
@@ -45,6 +85,7 @@ class Plugin {
 		add_action( 'network_admin_notices', [ $this, 'legacy_plugin_notice' ] );
 		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'handle_lazy_load_images' ], 16, 3 );
 		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'mark_query_loop_slides' ] );
+		add_filter( 'wp_kses_allowed_html', [ $this, 'allow_carousel_markup' ], 10, 2 );
 	}
 
 	/**
@@ -378,5 +419,30 @@ class Plugin {
 		}
 
 		return $processor->get_updated_html();
+	}
+
+	/**
+	 * Allow the carousel blocks' saved markup through KSES.
+	 *
+	 * Saves by users without `unfiltered_html` and `wp_kses_post()` calls use the 'post' context.
+	 * Without this, the arrow icons, ARIA attributes and Interactivity API templates are stripped,
+	 * which empties the controls and marks the blocks invalid in the editor.
+	 *
+	 * @param array<string, array<string, mixed>> $tags    Allowed tags and their attribute rules.
+	 * @param string|array                        $context KSES context.
+	 *
+	 * @return array<string, array<string, mixed>> Filtered allowed tags.
+	 */
+	public function allow_carousel_markup( array $tags, $context ): array {
+		if ( 'post' !== $context ) {
+			return $tags;
+		}
+
+		foreach ( self::KSES_ALLOWED_MARKUP as $tag => $attributes ) {
+			$existing     = isset( $tags[ $tag ] ) && is_array( $tags[ $tag ] ) ? $tags[ $tag ] : [];
+			$tags[ $tag ] = $existing + $attributes;
+		}
+
+		return $tags;
 	}
 }
