@@ -22,6 +22,7 @@ import { useSelect } from '@wordpress/data';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { chevronDown, chevronUp, close } from '@wordpress/icons';
 
+// Keep in sync with HANDPICKED_LIMIT in inc/Plugin.php.
 export const MAX_HANDPICKED = 20;
 export const MAX_SUGGESTIONS = 5;
 const CAROUSEL_BLOCK = 'rt-carousel/carousel';
@@ -116,16 +117,18 @@ export function getMeta( attributes: QueryBlockAttributes ): RtCarouselMeta | nu
 function usePublishedPicks( postType: string, ids: number[] ): Post[] | null {
 	const idsKey = ids.join( ',' );
 	return useSelect(
-		( select ) =>
-			idsKey
+		( select ) => {
+			const include = idsKey ? idsKey.split( ',' ).map( Number ) : [];
+			return include.length
 				? ( select( 'core' ) as unknown as CoreSelect ).getEntityRecords( 'postType', postType, {
-					include: idsKey.split( ',' ).map( Number ),
-					per_page: ids.length,
+					include,
+					per_page: include.length,
 					status: 'publish',
 					orderby: 'include',
 				} )
-				: [],
-		[ postType, idsKey, ids.length ],
+				: [];
+		},
+		[ postType, idsKey ],
 	);
 }
 
@@ -428,6 +431,7 @@ function PostTemplateEdit( {
 					inherit: false,
 					offset: 0,
 					status: 'publish',
+					// REST `context` param, forwarded by core Post Template; not the block context.
 					context: 'view',
 				},
 			} }

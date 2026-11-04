@@ -25,7 +25,8 @@ class Plugin {
 	use Singleton;
 
 	/**
-	 * Maximum number of handpicked posts per Query Loop.
+	 * Maximum number of handpicked posts per Query Loop. Keep in sync with MAX_HANDPICKED in
+	 * src/blocks/carousel/handpicked-posts.tsx.
 	 */
 	private const HANDPICKED_LIMIT = 20;
 
@@ -37,7 +38,7 @@ class Plugin {
 	/**
 	 * Picks (or null) of each Query Loop currently rendering, innermost last.
 	 *
-	 * @var array<int, array{ids: int[], postType: string}|null>
+	 * @var array<int, int[]|null>
 	 */
 	private array $handpicked_stack = [];
 
@@ -107,22 +108,25 @@ class Plugin {
 	 * Replace the query context of blocks inside a handpicked Query Loop.
 	 *
 	 * Forces `inherit` off (so core builds its own query) and attaches the picks under a
-	 * render-time only key read by filter_handpicked_query_vars().
+	 * render-time only key read by filter_handpicked_query_vars(). Only blocks that declare
+	 * `query` in usesContext (Post Template, Query No Results, Query Pagination) have it in
+	 * their context, and all of them must agree on the query being run. The post type is the
+	 * Query's own `query.postType`, which the context already carries.
 	 *
 	 * @param array $context The block context.
 	 *
 	 * @return array
 	 */
 	public function filter_handpicked_block_context( array $context ): array {
-		$picks = end( $this->handpicked_stack );
+		// end() is false when no Query is rendering, null when the innermost one is not handpicked.
+		$ids = end( $this->handpicked_stack );
 
-		if ( ! $picks || ! isset( $context['query'] ) || ! is_array( $context['query'] ) ) {
+		if ( ! is_array( $ids ) || ! isset( $context['query'] ) || ! is_array( $context['query'] ) ) {
 			return $context;
 		}
 
 		$context['query']['inherit']              = false;
-		$context['query']['postType']             = $picks['postType'];
-		$context['query'][ self::HANDPICKED_KEY ] = $picks['ids'];
+		$context['query'][ self::HANDPICKED_KEY ] = $ids;
 
 		return $context;
 	}
@@ -132,7 +136,7 @@ class Plugin {
 	 *
 	 * @param array $parsed_block The parsed core/query block.
 	 *
-	 * @return array{ids: int[], postType: string}|null Null unless the Query is in handpicked mode.
+	 * @return int[]|null Picked IDs, or null unless the Query is in handpicked mode.
 	 */
 	private function get_handpicked_picks( array $parsed_block ): ?array {
 		$meta = $parsed_block['attrs']['metadata']['rtCarousel'] ?? null;
@@ -158,12 +162,7 @@ class Plugin {
 			$ids[ $id ] = $id;
 		}
 
-		$post_type = $parsed_block['attrs']['query']['postType'] ?? '';
-
-		return [
-			'ids'      => array_slice( array_values( $ids ), 0, self::HANDPICKED_LIMIT ),
-			'postType' => is_string( $post_type ) && '' !== $post_type ? $post_type : 'post',
-		];
+		return array_slice( array_values( $ids ), 0, self::HANDPICKED_LIMIT );
 	}
 
 	/**

@@ -13,10 +13,12 @@ type Post = { id: number; title: { rendered: string } };
 
 const mockStores: {
 	parents: string[];
+	queryParents: string[];
 	queryAttributes: Record<string, unknown> | null;
 	entityRecords: jest.Mock;
 } = {
 	parents: [],
+	queryParents: [ 'query-1' ],
 	queryAttributes: null,
 	entityRecords: jest.fn(),
 };
@@ -91,7 +93,7 @@ jest.mock( '@wordpress/components', () => ( {
 
 const mockBlockEditor = {
 	getBlockParentsByBlockName: ( _id: string, name: string ) =>
-		name === 'rt-carousel/carousel' ? mockStores.parents : [ 'query-1' ],
+		name === 'rt-carousel/carousel' ? mockStores.parents : mockStores.queryParents,
 	getBlockAttributes: () => mockStores.queryAttributes,
 };
 
@@ -140,6 +142,7 @@ const handpicked = ( ids: number[], extra: Record<string, unknown> = {}, postTyp
 
 beforeEach( () => {
 	mockStores.parents = [ 'carousel' ];
+	mockStores.queryParents = [ 'query-1' ];
 	mockStores.queryAttributes = null;
 	mockStores.entityRecords.mockReset();
 	mockEntities( [] );
@@ -380,7 +383,9 @@ describe( 'Post Template preview', () => {
 	} );
 
 	it( 'passes through when there is no Query ancestor', () => {
-		mockStores.queryAttributes = null;
+		// Attributes would trigger the override if the ancestor guard were missing.
+		mockStores.queryParents = [];
+		mockStores.queryAttributes = handpicked( [ 7 ] );
 		render( <Enhanced { ...templateProps } /> );
 		expect( BlockEdit.mock.calls[ 0 ]![ 0 ].context ).toBe( templateProps.context );
 	} );

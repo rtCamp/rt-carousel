@@ -360,4 +360,46 @@ class HandpickedPostsTest extends UnitTestCase {
 		$this->assertSame( 'post', $vars['post_type'] );
 		$this->assertSame( 'post__in', $vars['orderby'] );
 	}
+
+	/**
+	 * The Query's own post type wins over a divergent metadata post type, so picks made for
+	 * another type match nothing instead of leaking posts of the old type.
+	 *
+	 * @return void
+	 */
+	public function test_query_post_type_wins_over_divergent_metadata(): void {
+		$attrs                                  = $this->handpicked_attrs( [ 10, 11 ], [ 'postType' => 'page' ] );
+		$attrs['metadata']['rtCarousel']['postType'] = 'post';
+
+		$vars = $this->final_query_vars( self::query_block( $attrs ) );
+
+		$this->assertSame( 'page', $vars['post_type'] );
+		$this->assertSame( [ 10, 11 ], $vars['post__in'] );
+	}
+
+	/**
+	 * Published-only holds for privileged viewers: incoming status and permission overrides
+	 * are dropped and no capability check is consulted.
+	 *
+	 * @return void
+	 */
+	public function test_published_only_for_privileged_users(): void {
+		\Brain\Monkey\Functions\expect( 'current_user_can' )->never();
+
+		$plugin = $this->plugin();
+		$plugin->filter_handpicked_block_data( self::query_block( $this->handpicked_attrs( [ 1 ] ) ) );
+		$context = $plugin->filter_handpicked_block_context( [ 'query' => [] ] );
+
+		$vars = $plugin->filter_handpicked_query_vars(
+			[
+				'post_status' => [ 'publish', 'private', 'draft' ],
+				'perm'        => 'readable',
+			],
+			new WP_Block( [], $context ),
+			1
+		);
+
+		$this->assertSame( 'publish', $vars['post_status'] );
+		$this->assertArrayNotHasKey( 'perm', $vars );
+	}
 }
