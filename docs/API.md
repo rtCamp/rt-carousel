@@ -103,7 +103,7 @@ The Query's own `query` attribute is never modified, and other `metadata` keys a
 | --- | --- | --- |
 | `render_block_data` | `filter_handpicked_block_data` | On each `core/query`, records its normalized picks (or `null`) on an internal stack. The parsed block is returned unchanged. |
 | `render_block_core/query` (priority 0) | `pop_handpicked_query` | Pops the stack when that Query finishes rendering. |
-| `render_block_context` | `filter_handpicked_block_context` | For blocks inside a handpicked Query that receive `query` context, forces `inherit` to `false`, sets `postType`, and attaches the picks under the render-time key `rtCarouselHandpickedIds`. |
+| `render_block_context` | `filter_handpicked_block_context` | For blocks inside a handpicked Query that receive `query` context, forces `inherit` to `false` and attaches the picks under the render-time key `rtCarouselHandpickedIds`. |
 | `query_loop_block_query_vars` (3 args) | `filter_handpicked_query_vars` | When that key is present, returns a fresh query: `post_type`, `post__in` (picks in order, or `[0]` when empty so WordPress never matches all posts), `orderby => post__in`, `posts_per_page => max(1, count)`, `post_status => publish`, `ignore_sticky_posts`, `no_found_rows`, `offset => 0`. Taxonomy, search, author, exclude, pagination and sticky settings are not carried over. |
 
 The context is adjusted in `render_block_context` rather than `render_block_data` because `WP_Block` computes the context a Query provides when it is constructed, before `render_block_data` runs for nested blocks.
