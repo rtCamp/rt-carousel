@@ -25,6 +25,16 @@ class Plugin {
 	use Singleton;
 
 	/**
+	 * Maximum number of handpicked posts per Query Loop.
+	 */
+	private const HANDPICKED_LIMIT = 20;
+
+	/**
+	 * Render-time only key marking a Query's context as handpicked.
+	 */
+	private const HANDPICKED_KEY = 'rtCarouselHandpickedIds';
+
+	/**
 	 * Plugin constructor.
 	 */
 	protected function __construct() {
@@ -45,6 +55,90 @@ class Plugin {
 		add_action( 'network_admin_notices', [ $this, 'legacy_plugin_notice' ] );
 		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'handle_lazy_load_images' ], 16, 3 );
 		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'mark_query_loop_slides' ] );
+		add_filter( 'render_block_data', [ $this, 'filter_handpicked_block_data' ] );
+		add_filter( 'query_loop_block_query_vars', [ $this, 'filter_handpicked_query_vars' ], 10, 3 );
+	}
+
+	/**
+	 * Mark a handpicked core/query block so its Post Template can be constrained.
+	 *
+	 * Reads `metadata.rtCarousel`; saved content is never modified, only the block data
+	 * used for this render.
+	 *
+	 * @param array $parsed_block The parsed block.
+	 *
+	 * @return array
+	 */
+	public function filter_handpicked_block_data( array $parsed_block ): array {
+		if ( 'core/query' !== ( $parsed_block['blockName'] ?? null ) ) {
+			return $parsed_block;
+		}
+
+		$meta = $parsed_block['attrs']['metadata']['rtCarousel'] ?? null;
+
+		if ( ! is_array( $meta ) || 'handpicked' !== ( $meta['mode'] ?? null ) ) {
+			return $parsed_block;
+		}
+
+		$ids = [];
+
+		foreach ( is_array( $meta['ids'] ?? null ) ? $meta['ids'] : [] as $id ) {
+			// Accept ints, integer-valued floats and digit strings only.
+			if ( is_string( $id ) && ctype_digit( $id ) ) {
+				$id = (int) $id;
+			} elseif ( is_float( $id ) && floor( $id ) === $id ) {
+				$id = (int) $id;
+			}
+
+			if ( ! is_int( $id ) || $id < 1 ) {
+				continue;
+			}
+
+			$ids[ $id ] = $id;
+		}
+
+		$query = $parsed_block['attrs']['query'] ?? [];
+		$query = is_array( $query ) ? $query : [];
+
+		$query['inherit']              = false;
+		$query[ self::HANDPICKED_KEY ] = array_slice( array_values( $ids ), 0, self::HANDPICKED_LIMIT );
+
+		$parsed_block['attrs']['query'] = $query;
+
+		return $parsed_block;
+	}
+
+	/**
+	 * Replace the Post Template query of a handpicked Query with the exact picks.
+	 *
+	 * @param array     $query_vars Query vars built by core.
+	 * @param \WP_Block $block      The Post Template block.
+	 * @param int       $page       Current page.
+	 *
+	 * @return array
+	 */
+	public function filter_handpicked_query_vars( array $query_vars, WP_Block $block, int $page ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Signature fixed by the filter.
+		$query = $block->context['query'] ?? null;
+
+		if ( ! is_array( $query ) || ! isset( $query[ self::HANDPICKED_KEY ] ) || ! is_array( $query[ self::HANDPICKED_KEY ] ) ) {
+			return $query_vars;
+		}
+
+		$ids       = $query[ self::HANDPICKED_KEY ];
+		$post_type = isset( $query['postType'] ) && is_string( $query['postType'] ) && '' !== $query['postType'] ? $query['postType'] : 'post';
+
+		// Fresh array: carries over no taxonomy, search, author, exclude or sticky constraints.
+		// An empty post__in would match all posts, so [0] matches nothing.
+		return [
+			'post_type'           => $post_type,
+			'post__in'            => $ids ? $ids : [ 0 ],
+			'orderby'             => 'post__in',
+			'posts_per_page'      => max( 1, count( $ids ) ),
+			'post_status'         => 'publish',
+			'ignore_sticky_posts' => true,
+			'no_found_rows'       => true,
+			'offset'              => 0,
+		];
 	}
 
 	/**

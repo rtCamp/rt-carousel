@@ -19,8 +19,9 @@ if ( ! class_exists( 'WP_Block' ) ) {
 	class WP_Block {
 		/**
 		 * @param array<string, mixed> $attributes Block attributes.
+		 * @param array<string, mixed> $context    Block context.
 		 */
-		public function __construct( public array $attributes = [] ) {}
+		public function __construct( public array $attributes = [], public array $context = [] ) {}
 	}
 }
 
