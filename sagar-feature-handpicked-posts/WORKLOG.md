@@ -1,0 +1,14 @@
+- PR Request Link: https://github.com/rtCamp/aitraining-sagar-tamang/pull/15
+- Intial Implementation
+  - Start Time: 1:45 PM IST
+  - End Time: 3:00 PM IST
+- Addendum Implementation
+  - Start Time: 3:15 PM IST
+  - End Time: 5:00 PM IST
+- Tools
+  - OpenCode and OpenChamber
+  - Models
+    - Claude Sonnet 5.5, High Effort (For Implementation)
+    - GPT-6 Sol, High Effort (For Planning)
+    - Claude Opus 4.7, High Effort (For Reviewing)
+  - Chrome Dev Tools MCP
