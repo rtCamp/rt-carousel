@@ -23,6 +23,7 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 import { chevronDown, chevronUp, close } from '@wordpress/icons';
 
 export const MAX_HANDPICKED = 20;
+export const MAX_SUGGESTIONS = 5;
 const CAROUSEL_BLOCK = 'rt-carousel/carousel';
 
 type Mode = 'latest' | 'handpicked';
@@ -200,17 +201,22 @@ function HandpickedControls( {
 	const atLimit = ids.length >= MAX_HANDPICKED;
 
 	const selected = usePublishedPicks( postType, mode === 'handpicked' ? ids : [] );
+	const idsKey = ids.join( ',' );
+	// Five latest published posts, or five matching a search. Picked posts are excluded
+	// server-side so the list stays full; selected rows are resolved separately.
 	const results = useSelect(
 		( select ) =>
 			mode === 'handpicked'
 				? ( select( 'core' ) as unknown as CoreSelect ).getEntityRecords( 'postType', postType, {
-					search,
 					status: 'publish',
-					per_page: 100,
-					orderby: search ? 'relevance' : 'date',
+					per_page: MAX_SUGGESTIONS,
+					order: 'desc',
+					orderby: 'date',
+					...( search ? { search } : {} ),
+					...( idsKey ? { exclude: idsKey.split( ',' ).map( Number ) } : {} ),
 				} )
 				: [],
-		[ mode, postType, search ],
+		[ mode, postType, search, idsKey ],
 	);
 
 	const update = ( next: Partial<RtCarouselMeta> ) =>
@@ -245,7 +251,7 @@ function HandpickedControls( {
 	};
 
 	const byId = new Map( ( selected ?? [] ).map( ( post ) => [ post.id, post ] ) );
-	const available = ( results ?? [] ).filter( ( post ) => ! ids.includes( post.id ) );
+	const available = ( results ?? [] ).filter( ( post ) => ! ids.includes( post.id ) ).slice( 0, MAX_SUGGESTIONS );
 	const limitId = 'rt-carousel-handpicked-limit';
 
 	return (

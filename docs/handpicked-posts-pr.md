@@ -2,7 +2,7 @@
 
 ## Summary
 
-Editors can switch a carousel's Query Loop from **Latest posts** (default, unchanged) to **Handpicked posts**: search published posts or pages of the Query's post type, add up to 20, and reorder or remove them with keyboard-operable buttons. The carousel shows exactly those items in that order, in the editor and on the front end, using the existing Post Template card design.
+Editors can switch a carousel's Query Loop from **Latest posts** (default, unchanged) to **Handpicked posts**: pick from five suggestions (the five latest published posts or pages of the Query's post type, or five matching a search), add up to 20, and reorder or remove them with keyboard-operable buttons. The carousel shows exactly those items in that order, in the editor and on the front end, using the existing Post Template card design.
 
 ## Implementation
 
@@ -21,7 +21,7 @@ The plan set `inherit`/picks from a `render_block_data` filter on `core/query`. 
 
 | Command | Result |
 | --- | --- |
-| `npm run test:js -- --runInBand` | 414 pass (baseline 387; +27 new in `handpicked-posts.test.tsx`) |
+| `npm run test:js -- --runInBand` | 417 pass (baseline 387; +30 new in `handpicked-posts.test.tsx`) |
 | `composer run test:unit` | 49 tests; 2 failures, both pre-existing (`PluginTest` counts 7 blocks, plugin registers 8). 19 new tests in `HandpickedPostsTest` pass |
 | `npm run lint:js` | 50 errors, identical to baseline (all in the untracked `rt-carousel/` checkout; none in `src/`) |
 | `npm run lint:css`, `npm run lint:js:types`, `composer run lint`, `composer run phpstan`, `npm run build` | clean |
@@ -34,7 +34,7 @@ All rows below were run by the **agent** only. **Human re-run: pending** — do 
 
 | # | Item | Editor | Front end | Run by |
 | --- | --- | --- | --- | --- |
-| 1 | Search/add/remove/reorder, no duplicates, exactly 20, 21st disabled with message | Verified (add by click, Move up, Remove, 20-pick limit message and `aria-describedby`) | 20 slides in saved order | agent |
+| 1 | Five latest suggestions before typing, at most five per search (picked posts excluded in the request so five stay shown), selected list reaches 20 independently; add/remove/reorder, no duplicates, 21st disabled with message | Verified: initial list was Post 24..21 + newest page-less post; after 7 picks still 5 suggestions; search "Post 1" returned 5 (18..14); Move up, Remove, 20-pick limit message and `aria-describedby` | 20 slides in saved order | agent |
 | 1 | Keyboard operation | Native buttons with accessible names; a real Enter key press on a focused `Move down` reordered the picks and kept focus. Full Tab-through pass not done | n/a | agent (partial) |
 | 2 | Exact picks despite perPage 2, `sticky: only`, search filter | Preview matched | 20 slides, sticky first because picked | agent |
 | 3 | Live preview matches front end | Order and count matched after add/reorder/save | | agent |

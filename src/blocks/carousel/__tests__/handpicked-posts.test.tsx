@@ -220,15 +220,49 @@ describe( 'Query inspector', () => {
 		expect( setAttributes ).not.toHaveBeenCalled();
 	} );
 
-	it( 'searches published content of the Query post type', () => {
+	it( 'requests the five latest published posts before typing', () => {
+		render( <Enhanced { ...queryProps( handpicked( [], {}, 'page' ) ) } /> );
+
+		expect( mockStores.entityRecords ).toHaveBeenCalledWith( 'postType', 'page', {
+			status: 'publish',
+			per_page: 5,
+			order: 'desc',
+			orderby: 'date',
+		} );
+	} );
+
+	it( 'searches published content of the Query post type, five at a time', () => {
 		render( <Enhanced { ...queryProps( handpicked( [], {}, 'page' ) ) } /> );
 		fireEvent.change( screen.getByLabelText( 'Search published content' ), { target: { value: 'hello' } } );
 
+		expect( mockStores.entityRecords ).toHaveBeenCalledWith( 'postType', 'page', {
+			status: 'publish',
+			per_page: 5,
+			order: 'desc',
+			orderby: 'date',
+			search: 'hello',
+		} );
+	} );
+
+	it( 'excludes picked posts from the request so five suggestions stay available', () => {
+		mockEntities( [ post( 1 ), post( 2 ) ] );
+		render( <Enhanced { ...queryProps( handpicked( [ 1, 2 ] ) ) } /> );
+
 		expect( mockStores.entityRecords ).toHaveBeenCalledWith(
 			'postType',
-			'page',
-			expect.objectContaining( { search: 'hello', status: 'publish', per_page: 100 } ),
+			'post',
+			expect.objectContaining( { per_page: 5, exclude: [ 1, 2 ] } ),
 		);
+	} );
+
+	it( 'never renders more than five suggestions, while all picks stay listed', () => {
+		const picked = Array.from( { length: 8 }, ( _, i ) => i + 1 );
+		const suggestions = Array.from( { length: 9 }, ( _, i ) => post( 100 + i ) );
+		mockEntities( picked.map( ( id ) => post( id ) ), suggestions );
+		render( <Enhanced { ...queryProps( handpicked( picked ) ) } /> );
+
+		expect( screen.getAllByRole( 'button', { name: /^Add: / } ) ).toHaveLength( 5 );
+		expect( screen.getAllByRole( 'button', { name: /^Remove: / } ) ).toHaveLength( 8 );
 	} );
 
 	it( 'adds a post by click, excluding already picked ones', () => {
