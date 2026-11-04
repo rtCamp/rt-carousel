@@ -34,7 +34,7 @@ All rows below were run by the **agent** only. **Human re-run: pending** — do 
 
 | # | Item | Editor | Front end | Run by |
 | --- | --- | --- | --- | --- |
-| 1 | Five latest suggestions before typing, at most five per search (picked posts excluded in the request so five stay shown), selected list reaches 20 independently; add/remove/reorder, no duplicates, 21st disabled with message | Verified: initial list was Post 24..21 + newest page-less post; after 7 picks still 5 suggestions; search "Post 1" returned 5 (18..14); Move up, Remove, 20-pick limit message and `aria-describedby` | 20 slides in saved order | agent |
+| 1 | Five latest suggestions before typing, at most five per search (picked posts excluded in the request so five stay shown), selected list reaches 20 independently; add/remove/reorder, no duplicates, 21st disabled with message | Verified: initial list was the five newest published posts (Five, Post 24..21); after 7 picks still 5 suggestions; search "Post 1" returned 5 (18..14); Move up, Remove, 20-pick limit message and `aria-describedby` | 20 slides in saved order | agent |
 | 1 | Keyboard operation | Native buttons with accessible names; a real Enter key press on a focused `Move down` reordered the picks and kept focus. Full Tab-through pass not done | n/a | agent (partial) |
 | 2 | Exact picks despite perPage 2, `sticky: only`, search filter | Preview matched | 20 slides, sticky first because picked | agent |
 | 3 | Live preview matches front end | Order and count matched after add/reorder/save | | agent |
