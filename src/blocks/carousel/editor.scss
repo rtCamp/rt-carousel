@@ -154,3 +154,25 @@
 .rt-carousel[data-is-tabs="true"] .embla__slide:not(.is-active) {
 	display: none;
 }
+
+.rt-carousel-handpicked {
+	&__selected,
+	&__results {
+		list-style: none;
+		margin: 0 0 12px;
+		padding: 0;
+	}
+
+	&__row {
+		align-items: center;
+		display: flex;
+		gap: 4px;
+		margin: 0;
+	}
+
+	&__title {
+		flex: 1;
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+}

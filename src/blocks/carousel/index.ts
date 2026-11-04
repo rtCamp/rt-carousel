@@ -6,6 +6,7 @@ import {
 import Edit from './edit';
 import Save from './save';
 import deprecated from './deprecated';
+import './handpicked-posts';
 import './style.scss';
 import './editor.scss';
 import metadata from './block.json';
