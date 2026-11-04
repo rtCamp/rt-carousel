@@ -18,6 +18,7 @@ Easily create dynamic, accessible, and customizable carousels for any content ty
 - **High Performance**: Viewport & Slide Engine powered by Embla Carousel.
 - **Interactivity API**: Reactive state management with `data-wp-interactive`.
 - **Dynamic Content**: Full support for WordPress **Query Loop** and **Terms Query** blocks.
+- **Handpicked Posts**: Choose up to 20 published posts or pages, in a fixed order, for a Query Loop carousel.
 - **Accessibility**: W3C-compliant roles, labels, and keyboard navigation.
 - **RTL Support**: Built-in support for Right-to-Left languages.
 

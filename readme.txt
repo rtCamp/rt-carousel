@@ -20,6 +20,7 @@ A modular, high-performance carousel block for WordPress, powered by the Interac
 * **High Performance** – Powered by Embla Carousel v8
 * **Interactivity API** – Reactive state management with zero hydration overhead
 * **Query Loop Support** – Each post in a Query Loop becomes a slide automatically
+* **Handpicked Posts** – Choose up to 20 published posts or pages, in a fixed order, for a Query Loop carousel
 * **Accessibility** – W3C-compliant roles, labels, and keyboard navigation
 * **RTL Support** – Built-in support for Right-to-Left languages
 
@@ -65,7 +66,7 @@ Absolutely. Each slide accepts any WordPress block—images, paragraphs, groups,
 
 = Does it support the Query Loop block? =
 
-Yes. Add a Query Loop inside the Carousel Viewport, and each post becomes a slide automatically.
+Yes. Add a Query Loop inside the Carousel Viewport, and each post becomes a slide automatically. To pick specific posts or pages instead of the latest ones, select the Query Loop and set **Show** to **Handpicked posts** in the **Carousel posts** panel.
 
 = Is it accessible? =
 

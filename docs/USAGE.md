@@ -82,6 +82,26 @@ You can create dynamic post sliders or content carousels using the WordPress Que
 
 You can also start from the bundled **rtCarousel: Query Loop Carousel** pattern.
 
+### Handpicking Posts
+
+By default a Query Loop carousel shows the **latest posts** that match its query settings. To choose exactly which posts or pages appear, and in what order:
+
+1. Select the **Query Loop** block inside the Carousel Viewport and open the block settings sidebar.
+2. In the **Carousel posts** panel, set **Show** to **Handpicked posts**.
+3. Pick from the suggestions: before you type, the five latest published items of the Query's post type are listed; type a keyword to see up to five matches. Use **Add** on a suggestion to select it.
+4. Reorder with **Move up** / **Move down** and remove with **Remove**. All controls are keyboard operable and have accessible names that include the post title.
+
+Behavior to know about:
+
+- **One post type per carousel.** Switching the Query's **Post Type** (for example Post to Page) clears the selection, in either mode.
+- **Up to 20 posts.** Once 20 are selected, adding is disabled and a message explains the limit. The suggestion list is capped at five, but the selected list is not.
+- **Exact results.** A handpicked carousel shows exactly the selected posts in the selected order, regardless of the Query's other settings (items per page, sticky posts, search, author, taxonomy filters, exclusions, offset, "Inherit query from template").
+- **Published content only**, for every visitor including administrators. A selected post that is later deleted, trashed, unpublished, made private or changes type simply produces no slide, in the editor and on the front end; the remaining slides close up in order. The post stays in the selected list as **Unavailable post (ID n)** until you remove it, and it still counts toward the 20 limit.
+- **Empty selection.** The editor shows "Choose posts to show in this carousel" and the front end shows no slides. If every selected post is unavailable, the editor shows "No selected published posts are available". It never falls back to the latest posts.
+- **Switching back to Latest posts** restores the previous behavior; your selection is kept, so switching back to Handpicked restores it.
+- The picker only appears for a Query Loop inside a Carousel. If you move a handpicked Query Loop out of the carousel, it keeps showing the selected posts, but the picker is no longer available there.
+- Existing Query Loop carousels are unchanged: nothing is written to a Query Loop until you change this setting.
+
 ---
 
 ## Using Terms Query with Carousel
