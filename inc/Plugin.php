@@ -35,6 +35,13 @@ class Plugin {
 	private const HANDPICKED_KEY = 'rtCarouselHandpickedIds';
 
 	/**
+	 * Picks (or null) of each Query Loop currently rendering, innermost last.
+	 *
+	 * @var array<int, array{ids: int[], postType: string}|null>
+	 */
+	private array $handpicked_stack = [];
+
+	/**
 	 * Plugin constructor.
 	 */
 	protected function __construct() {
@@ -56,14 +63,18 @@ class Plugin {
 		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'handle_lazy_load_images' ], 16, 3 );
 		add_filter( 'render_block_rt-carousel/carousel', [ $this, 'mark_query_loop_slides' ] );
 		add_filter( 'render_block_data', [ $this, 'filter_handpicked_block_data' ] );
+		add_filter( 'render_block_core/query', [ $this, 'pop_handpicked_query' ], 0 );
+		add_filter( 'render_block_context', [ $this, 'filter_handpicked_block_context' ] );
 		add_filter( 'query_loop_block_query_vars', [ $this, 'filter_handpicked_query_vars' ], 10, 3 );
 	}
 
 	/**
-	 * Mark a handpicked core/query block so its Post Template can be constrained.
+	 * Track which Query Loop is rendering so its descendants can be constrained.
 	 *
-	 * Reads `metadata.rtCarousel`; saved content is never modified, only the block data
-	 * used for this render.
+	 * Pushes the normalized picks of a handpicked core/query (or null for any other Query)
+	 * and is balanced by pop_handpicked_query(). Parsed blocks are never modified: WP_Block
+	 * computes the context a Query provides at construction, before this filter runs, so the
+	 * context is adjusted later in filter_handpicked_block_context().
 	 *
 	 * @param array $parsed_block The parsed block.
 	 *
@@ -74,10 +85,60 @@ class Plugin {
 			return $parsed_block;
 		}
 
+		$this->handpicked_stack[] = $this->get_handpicked_picks( $parsed_block );
+
+		return $parsed_block;
+	}
+
+	/**
+	 * Leave the Query Loop pushed by filter_handpicked_block_data().
+	 *
+	 * @param string $block_content The rendered Query Loop.
+	 *
+	 * @return string
+	 */
+	public function pop_handpicked_query( string $block_content ): string {
+		array_pop( $this->handpicked_stack );
+
+		return $block_content;
+	}
+
+	/**
+	 * Replace the query context of blocks inside a handpicked Query Loop.
+	 *
+	 * Forces `inherit` off (so core builds its own query) and attaches the picks under a
+	 * render-time only key read by filter_handpicked_query_vars().
+	 *
+	 * @param array $context The block context.
+	 *
+	 * @return array
+	 */
+	public function filter_handpicked_block_context( array $context ): array {
+		$picks = end( $this->handpicked_stack );
+
+		if ( ! $picks || ! isset( $context['query'] ) || ! is_array( $context['query'] ) ) {
+			return $context;
+		}
+
+		$context['query']['inherit']              = false;
+		$context['query']['postType']             = $picks['postType'];
+		$context['query'][ self::HANDPICKED_KEY ] = $picks['ids'];
+
+		return $context;
+	}
+
+	/**
+	 * Read and normalize the handpicked selection of a parsed core/query block.
+	 *
+	 * @param array $parsed_block The parsed core/query block.
+	 *
+	 * @return array{ids: int[], postType: string}|null Null unless the Query is in handpicked mode.
+	 */
+	private function get_handpicked_picks( array $parsed_block ): ?array {
 		$meta = $parsed_block['attrs']['metadata']['rtCarousel'] ?? null;
 
 		if ( ! is_array( $meta ) || 'handpicked' !== ( $meta['mode'] ?? null ) ) {
-			return $parsed_block;
+			return null;
 		}
 
 		$ids = [];
@@ -97,15 +158,12 @@ class Plugin {
 			$ids[ $id ] = $id;
 		}
 
-		$query = $parsed_block['attrs']['query'] ?? [];
-		$query = is_array( $query ) ? $query : [];
+		$post_type = $parsed_block['attrs']['query']['postType'] ?? '';
 
-		$query['inherit']              = false;
-		$query[ self::HANDPICKED_KEY ] = array_slice( array_values( $ids ), 0, self::HANDPICKED_LIMIT );
-
-		$parsed_block['attrs']['query'] = $query;
-
-		return $parsed_block;
+		return [
+			'ids'      => array_slice( array_values( $ids ), 0, self::HANDPICKED_LIMIT ),
+			'postType' => is_string( $post_type ) && '' !== $post_type ? $post_type : 'post',
+		];
 	}
 
 	/**

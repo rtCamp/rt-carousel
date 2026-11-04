@@ -80,7 +80,7 @@ class HandpickedPostsTest extends UnitTestCase {
 	}
 
 	/**
-	 * Run both filters like WordPress would and return the final query vars.
+	 * Run the filters like WordPress would for a Query's Post Template and return the final query vars.
 	 *
 	 * @param array<string, mixed> $block Parsed Query block.
 	 *
@@ -88,7 +88,11 @@ class HandpickedPostsTest extends UnitTestCase {
 	 */
 	private function final_query_vars( array $block ): array {
 		$plugin = $this->plugin();
-		$block  = $plugin->filter_handpicked_block_data( $block );
+		$plugin->filter_handpicked_block_data( $block );
+
+		// Core builds the Query's provided context from its saved attributes.
+		$context = $plugin->filter_handpicked_block_context( [ 'query' => $block['attrs']['query'] ?? [] ] );
+		$plugin->pop_handpicked_query( '' );
 
 		return $plugin->filter_handpicked_query_vars(
 			[
@@ -101,7 +105,7 @@ class HandpickedPostsTest extends UnitTestCase {
 				'tax_query'      => [ [ 'taxonomy' => 'category' ] ],
 				'post_status'    => 'private',
 			],
-			new WP_Block( [], [ 'query' => $block['attrs']['query'] ] ),
+			new WP_Block( [], $context ),
 			1
 		);
 	}
@@ -118,11 +122,13 @@ class HandpickedPostsTest extends UnitTestCase {
 		$method->invoke( $plugin );
 
 		$this->assertNotFalse( has_filter( 'render_block_data', [ $plugin, 'filter_handpicked_block_data' ] ) );
+		$this->assertNotFalse( has_filter( 'render_block_core/query', [ $plugin, 'pop_handpicked_query' ] ) );
+		$this->assertNotFalse( has_filter( 'render_block_context', [ $plugin, 'filter_handpicked_block_context' ] ) );
 		$this->assertNotFalse( has_filter( 'query_loop_block_query_vars', [ $plugin, 'filter_handpicked_query_vars' ] ) );
 	}
 
 	/**
-	 * Blocks without handpicked metadata are returned untouched.
+	 * Parsed blocks are never modified, and contexts outside a handpicked Query are untouched.
 	 *
 	 * @param array<string, mixed> $block Parsed block.
 	 *
@@ -130,7 +136,12 @@ class HandpickedPostsTest extends UnitTestCase {
 	 */
 	#[DataProvider( 'untouched_blocks' )]
 	public function test_untouched_blocks( array $block ): void {
-		$this->assertSame( $block, $this->plugin()->filter_handpicked_block_data( $block ) );
+		$plugin  = $this->plugin();
+		$context = [ 'query' => [ 'inherit' => true ] ];
+
+		$this->assertSame( $block, $plugin->filter_handpicked_block_data( $block ) );
+		$this->assertSame( $context, $plugin->filter_handpicked_block_context( $context ) );
+		$plugin->pop_handpicked_query( '' );
 	}
 
 	/**
@@ -140,8 +151,8 @@ class HandpickedPostsTest extends UnitTestCase {
 	 */
 	public static function untouched_blocks(): array {
 		return [
-			'query without metadata'    => [ self::query_block( [ 'query' => [ 'inherit' => true ] ] ) ],
-			'query latest mode'         => [
+			'query without metadata'   => [ self::query_block( [ 'query' => [ 'inherit' => true ] ] ) ],
+			'query latest mode'        => [
 				self::query_block(
 					[
 						'query'    => [ 'perPage' => 3 ],
@@ -154,15 +165,20 @@ class HandpickedPostsTest extends UnitTestCase {
 					]
 				),
 			],
-			'query other metadata'      => [ self::query_block( [ 'metadata' => [ 'name' => 'x' ] ] ) ],
-			'malformed rtCarousel'      => [ self::query_block( [ 'metadata' => [ 'rtCarousel' => 'handpicked' ] ] ) ],
-			'non-query block'           => [
+			'query other metadata'     => [ self::query_block( [ 'metadata' => [ 'name' => 'x' ] ] ) ],
+			'malformed rtCarousel'     => [ self::query_block( [ 'metadata' => [ 'rtCarousel' => 'handpicked' ] ] ) ],
+			'non-query block'          => [
 				[
 					'blockName' => 'core/group',
 					'attrs'     => [ 'metadata' => [ 'rtCarousel' => [ 'mode' => 'handpicked' ] ] ],
 				],
 			],
-			'freeform block (no name)'  => [ [ 'blockName' => null, 'attrs' => [] ] ],
+			'freeform block (no name)' => [
+				[
+					'blockName' => null,
+					'attrs'     => [],
+				],
+			],
 		];
 	}
 
@@ -183,18 +199,42 @@ class HandpickedPostsTest extends UnitTestCase {
 	}
 
 	/**
-	 * Handpicked block data forces non-inherited query and keeps other metadata.
+	 * Handpicked Queries force a non-inherited context; saved content is untouched.
 	 *
 	 * @return void
 	 */
-	public function test_block_data_disables_inherit_and_preserves_content(): void {
+	public function test_context_disables_inherit_and_content_is_untouched(): void {
+		$plugin = $this->plugin();
 		$block  = self::query_block( $this->handpicked_attrs( [ 5, 3 ] ) );
-		$result = $this->plugin()->filter_handpicked_block_data( $block );
 
-		$this->assertFalse( $result['attrs']['query']['inherit'] );
-		$this->assertSame( 'Keep me', $result['attrs']['metadata']['name'] );
-		$this->assertSame( $block['attrs']['metadata'], $result['attrs']['metadata'] );
-		$this->assertSame( $block['innerHTML'], $result['innerHTML'] );
+		$this->assertSame( $block, $plugin->filter_handpicked_block_data( $block ) );
+
+		$context = $plugin->filter_handpicked_block_context( [ 'query' => [ 'inherit' => true ] ] );
+		$this->assertFalse( $context['query']['inherit'] );
+		$this->assertSame( [ 5, 3 ], $context['query']['rtCarouselHandpickedIds'] );
+
+		// Blocks without query context are left alone.
+		$this->assertSame( [ 'postId' => 1 ], $plugin->filter_handpicked_block_context( [ 'postId' => 1 ] ) );
+	}
+
+	/**
+	 * Picks apply only while their Query renders, and nested Queries are independent.
+	 *
+	 * @return void
+	 */
+	public function test_picks_are_scoped_to_their_query(): void {
+		$plugin  = $this->plugin();
+		$context = [ 'query' => [ 'inherit' => true ] ];
+
+		$plugin->filter_handpicked_block_data( self::query_block( $this->handpicked_attrs( [ 5 ] ) ) );
+		$plugin->filter_handpicked_block_data( self::query_block( [ 'query' => [ 'inherit' => true ] ] ) );
+		$this->assertSame( $context, $plugin->filter_handpicked_block_context( $context ), 'Nested latest Query' );
+
+		$plugin->pop_handpicked_query( '' );
+		$this->assertSame( [ 5 ], $plugin->filter_handpicked_block_context( $context )['query']['rtCarouselHandpickedIds'] );
+
+		$plugin->pop_handpicked_query( '' );
+		$this->assertSame( $context, $plugin->filter_handpicked_block_context( $context ), 'After the Query' );
 	}
 
 	/**
