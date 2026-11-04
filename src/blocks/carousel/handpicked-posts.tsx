@@ -15,8 +15,10 @@ import {
 	PanelBody,
 	Placeholder,
 	RadioControl,
+	RangeControl,
 	SearchControl,
 	Spinner,
+	ToggleControl,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { __, _n, sprintf } from '@wordpress/i18n';
@@ -25,6 +27,10 @@ import { chevronDown, chevronUp, close } from '@wordpress/icons';
 // Keep in sync with HANDPICKED_LIMIT in inc/Plugin.php.
 export const MAX_HANDPICKED = 20;
 export const MAX_SUGGESTIONS = 5;
+// Keep in sync with FILL_DEFAULT, FILL_MIN and FILL_MAX in inc/Plugin.php.
+export const DEFAULT_FILL_COUNT = 6;
+export const MIN_FILL_COUNT = 1;
+export const MAX_FILL_COUNT = 20;
 const CAROUSEL_BLOCK = 'rt-carousel/carousel';
 
 type Mode = 'latest' | 'handpicked';
@@ -33,6 +39,10 @@ export interface RtCarouselMeta {
 	mode: Mode;
 	ids: number[];
 	postType: string;
+	/** Absent means off. */
+	fillWithLatest?: boolean;
+	/** Absent means 6; only applies while fill is on. */
+	numberOfPosts?: number;
 }
 
 interface QueryAttributes {
@@ -92,6 +102,19 @@ export function normalizeIds( ids: unknown ): number[] {
 	return [ ...seen ].slice( 0, MAX_HANDPICKED );
 }
 
+/**
+ * "Number of posts" for the fill: whole numbers clamp to 1-20, anything else is the default.
+ *
+ * @param {unknown} value Stored or entered value.
+ * @return {number} Count between 1 and 20.
+ */
+export function normalizeFillCount( value: unknown ): number {
+	if ( typeof value !== 'number' || ! Number.isInteger( value ) ) {
+		return DEFAULT_FILL_COUNT;
+	}
+	return Math.min( MAX_FILL_COUNT, Math.max( MIN_FILL_COUNT, value ) );
+}
+
 export function getPostType( attributes: QueryBlockAttributes ): string {
 	return attributes.query?.postType || 'post';
 }
@@ -105,6 +128,8 @@ export function getMeta( attributes: QueryBlockAttributes ): RtCarouselMeta | nu
 		mode: meta.mode === 'handpicked' ? 'handpicked' : 'latest',
 		ids: normalizeIds( meta.ids ),
 		postType: meta.postType || getPostType( attributes ),
+		fillWithLatest: meta.fillWithLatest === true,
+		numberOfPosts: normalizeFillCount( meta.numberOfPosts ),
 	};
 }
 
@@ -129,6 +154,31 @@ function usePublishedPicks( postType: string, ids: number[] ): Post[] | null {
 				: [];
 		},
 		[ postType, idsKey ],
+	);
+}
+
+/**
+ * Newest published posts of `postType` that are not in `exclude`, for "fill with latest".
+ * Null while loading; [] when `count` is 0 (nothing is requested) or nothing else is published.
+ *
+ * @param {string}   postType Post type to query.
+ * @param {number}   count    How many posts are still needed.
+ * @param {number[]} exclude  Every picked ID, including unavailable ones.
+ */
+function useLatestPosts( postType: string, count: number, exclude: number[] ): Post[] | null {
+	const excludeKey = exclude.join( ',' );
+	return useSelect(
+		( select ) =>
+			count > 0
+				? ( select( 'core' ) as unknown as CoreSelect ).getEntityRecords( 'postType', postType, {
+					status: 'publish',
+					per_page: count,
+					order: 'desc',
+					orderby: 'date',
+					...( excludeKey ? { exclude: excludeKey.split( ',' ).map( Number ) } : {} ),
+				} )
+				: [],
+		[ postType, count, excludeKey ],
 	);
 }
 
@@ -201,6 +251,8 @@ function HandpickedControls( {
 	const meta = getMeta( attributes );
 	const mode = meta?.mode ?? 'latest';
 	const ids = meta?.ids ?? [];
+	const fill = meta?.fillWithLatest === true;
+	const numberOfPosts = meta?.numberOfPosts ?? DEFAULT_FILL_COUNT;
 	const atLimit = ids.length >= MAX_HANDPICKED;
 
 	const selected = usePublishedPicks( postType, mode === 'handpicked' ? ids : [] );
@@ -226,7 +278,8 @@ function HandpickedControls( {
 		setAttributes( {
 			metadata: {
 				...attributes.metadata,
-				rtCarousel: { mode, ids, postType, ...next },
+				// Spread the stored record first so fill settings and any other keys survive.
+				rtCarousel: { ...attributes.metadata?.rtCarousel, mode, ids, postType, ...next },
 			},
 		} );
 
@@ -291,6 +344,23 @@ function HandpickedControls( {
 								/>
 							) ) }
 						</ol>
+					) }
+					<ToggleControl
+						label={ __( 'Fill with latest posts', 'rt-carousel' ) }
+						help={ __( 'Add the newest published posts after your picks to reach the number of posts.', 'rt-carousel' ) }
+						checked={ fill }
+						onChange={ ( value: boolean ) => update( { fillWithLatest: value } ) }
+						__nextHasNoMarginBottom
+					/>
+					{ fill && (
+						<RangeControl
+							label={ __( 'Number of posts', 'rt-carousel' ) }
+							value={ numberOfPosts }
+							min={ MIN_FILL_COUNT }
+							max={ MAX_FILL_COUNT }
+							onChange={ ( value?: number ) => update( { numberOfPosts: normalizeFillCount( value ) } ) }
+							__nextHasNoMarginBottom
+						/>
 					) }
 					{ atLimit && (
 						<p id={ limitId } role="status">
@@ -357,7 +427,8 @@ function QueryEdit( {
 			setAttributes( {
 				metadata: {
 					...attributes.metadata,
-					rtCarousel: { mode: meta.mode, ids: [], postType },
+					// Only the picks belong to the old type; fill settings carry over.
+					rtCarousel: { ...attributes.metadata?.rtCarousel, mode: meta.mode, ids: [], postType },
 				},
 			} );
 		}
@@ -406,16 +477,44 @@ function PostTemplateEdit( {
 	// Tells "still loading" (null) from "nothing left to show" ([]).
 	const survivors = usePublishedPicks( postType, ids );
 
+	// Fill with latest: published picks in saved order (first N), then the newest other posts.
+	const fill = handpicked && meta?.fillWithLatest === true;
+	const count = meta?.numberOfPosts ?? DEFAULT_FILL_COUNT;
+	const pickedIds = survivors
+		? ids.filter( ( id ) => survivors.some( ( post ) => post.id === id ) ).slice( 0, count )
+		: null;
+	const latest = useLatestPosts( postType, fill && pickedIds ? count - pickedIds.length : 0, ids );
+
 	if ( ! handpicked ) {
 		return <BlockEdit { ...props } />;
 	}
 
-	if ( ! ids.length ) {
-		return <Prompt>{ __( 'Choose posts to show in this carousel', 'rt-carousel' ) }</Prompt>;
-	}
+	let includeIds = ids;
 
-	if ( survivors?.length === 0 ) {
-		return <Prompt>{ __( 'No selected published posts are available', 'rt-carousel' ) }</Prompt>;
+	if ( fill ) {
+		// Wait for both requests: never preview partial or previous results.
+		if ( pickedIds === null || latest === null ) {
+			return (
+				<Prompt>
+					<Spinner />
+				</Prompt>
+			);
+		}
+
+		includeIds = [ ...new Set( [ ...pickedIds, ...latest.map( ( post ) => post.id ) ] ) ].slice( 0, count );
+
+		// Never send an empty `include`: core would select every post.
+		if ( ! includeIds.length ) {
+			return <Prompt>{ __( 'No published posts are available', 'rt-carousel' ) }</Prompt>;
+		}
+	} else {
+		if ( ! ids.length ) {
+			return <Prompt>{ __( 'Choose posts to show in this carousel', 'rt-carousel' ) }</Prompt>;
+		}
+
+		if ( survivors?.length === 0 ) {
+			return <Prompt>{ __( 'No selected published posts are available', 'rt-carousel' ) }</Prompt>;
+		}
 	}
 
 	return (
@@ -425,9 +524,9 @@ function PostTemplateEdit( {
 				...props.context,
 				query: {
 					postType,
-					include: ids,
+					include: includeIds,
 					orderBy: 'include',
-					perPage: ids.length,
+					perPage: includeIds.length,
 					inherit: false,
 					offset: 0,
 					status: 'publish',

@@ -36,9 +36,23 @@ class Plugin {
 	private const HANDPICKED_KEY = 'rtCarouselHandpickedIds';
 
 	/**
-	 * Picks (or null) of each Query Loop currently rendering, innermost last.
+	 * Render-time only key holding the "fill with latest" post count; absent when fill is off.
+	 */
+	private const FILL_KEY = 'rtCarouselFillCount';
+
+	/**
+	 * Default and bounds of the "Number of posts" setting. Keep in sync with
+	 * DEFAULT_FILL_COUNT, MIN_FILL_COUNT and MAX_FILL_COUNT in src/blocks/carousel/handpicked-posts.tsx.
+	 */
+	private const FILL_DEFAULT = 6;
+	private const FILL_MIN     = 1;
+	private const FILL_MAX     = 20;
+
+	/**
+	 * Picks and fill count (null when fill is off) of each Query Loop currently rendering,
+	 * innermost last; null for a Query that is not handpicked.
 	 *
-	 * @var array<int, int[]|null>
+	 * @var array<int, array{ids: int[], fill: int|null}|null>
 	 */
 	private array $handpicked_stack = [];
 
@@ -119,14 +133,18 @@ class Plugin {
 	 */
 	public function filter_handpicked_block_context( array $context ): array {
 		// end() is false when no Query is rendering, null when the innermost one is not handpicked.
-		$ids = end( $this->handpicked_stack );
+		$picks = end( $this->handpicked_stack );
 
-		if ( ! is_array( $ids ) || ! isset( $context['query'] ) || ! is_array( $context['query'] ) ) {
+		if ( ! is_array( $picks ) || ! isset( $context['query'] ) || ! is_array( $context['query'] ) ) {
 			return $context;
 		}
 
 		$context['query']['inherit']              = false;
-		$context['query'][ self::HANDPICKED_KEY ] = $ids;
+		$context['query'][ self::HANDPICKED_KEY ] = $picks['ids'];
+
+		if ( null !== $picks['fill'] ) {
+			$context['query'][ self::FILL_KEY ] = $picks['fill'];
+		}
 
 		return $context;
 	}
@@ -136,7 +154,7 @@ class Plugin {
 	 *
 	 * @param array $parsed_block The parsed core/query block.
 	 *
-	 * @return int[]|null Picked IDs, or null unless the Query is in handpicked mode.
+	 * @return array{ids: int[], fill: int|null}|null Picks and fill count, or null unless the Query is in handpicked mode.
 	 */
 	private function get_handpicked_picks( array $parsed_block ): ?array {
 		$meta = $parsed_block['attrs']['metadata']['rtCarousel'] ?? null;
@@ -162,11 +180,119 @@ class Plugin {
 			$ids[ $id ] = $id;
 		}
 
-		return array_slice( array_values( $ids ), 0, self::HANDPICKED_LIMIT );
+		return [
+			'ids'  => array_slice( array_values( $ids ), 0, self::HANDPICKED_LIMIT ),
+			'fill' => true === ( $meta['fillWithLatest'] ?? null ) ? $this->normalize_fill_count( $meta['numberOfPosts'] ?? null ) : null,
+		];
 	}
 
 	/**
-	 * Replace the Post Template query of a handpicked Query with the exact picks.
+	 * Normalize the stored "Number of posts": integers clamp to 1-20, anything else is the default.
+	 *
+	 * @param mixed $value Stored value.
+	 *
+	 * @return int
+	 */
+	private function normalize_fill_count( mixed $value ): int {
+		$is_whole = is_int( $value ) || ( is_float( $value ) && is_finite( $value ) && floor( $value ) === $value );
+
+		if ( ! $is_whole ) {
+			return self::FILL_DEFAULT;
+		}
+
+		// Clamp before casting so huge floats cannot overflow.
+		return (int) max( self::FILL_MIN, min( self::FILL_MAX, $value ) );
+	}
+
+	/**
+	 * Keep positive integers (or digit strings), first occurrence wins.
+	 *
+	 * @param mixed $ids IDs as returned by get_posts().
+	 *
+	 * @return int[]
+	 */
+	private function clean_ids( mixed $ids ): array {
+		$clean = [];
+
+		foreach ( is_array( $ids ) ? $ids : [] as $id ) {
+			if ( is_string( $id ) && ctype_digit( $id ) ) {
+				$id = (int) $id;
+			}
+
+			if ( ! is_int( $id ) || $id <= 0 ) {
+				continue;
+			}
+
+			$clean[ $id ] = $id;
+		}
+
+		return array_values( $clean );
+	}
+
+	/**
+	 * Build the final ordered IDs for "fill with latest": published picks in saved order, then
+	 * the newest published posts of the type that are not picks, up to the count.
+	 *
+	 * Only the post type applies: no other Query setting, sticky priority or pick status.
+	 *
+	 * @param int[]  $ids       Stored picks (including unavailable ones).
+	 * @param string $post_type Post type.
+	 * @param int    $count     Number of posts to show.
+	 *
+	 * @return int[]
+	 */
+	private function resolve_fill_ids( array $ids, string $post_type, int $count ): array {
+		$final = [];
+
+		if ( $ids ) {
+			$final = array_slice(
+				$this->clean_ids(
+					get_posts( // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- Fill ids are resolved once per render; filters are suppressed on purpose, see below.
+						[
+							'post_type'           => $post_type,
+							'post_status'         => 'publish',
+							'post__in'            => $ids,
+							'orderby'             => 'post__in',
+							'posts_per_page'      => count( $ids ),
+							'fields'              => 'ids',
+							'ignore_sticky_posts' => true,
+							'suppress_filters'    => true, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters -- Other plugins' query filters must not inject posts or change the fill.
+						]
+					)
+				),
+				0,
+				$count
+			);
+		}
+
+		$remaining = $count - count( $final );
+
+		if ( $remaining > 0 ) {
+			$latest = $this->clean_ids(
+				get_posts( // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_posts_get_posts -- Fill ids are resolved once per render; filters are suppressed on purpose, see below.
+					[
+						'post_type'           => $post_type,
+						'post_status'         => 'publish',
+						'post__not_in'        => $ids, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- At most 20 picks are excluded.
+						'posts_per_page'      => $remaining,
+						'orderby'             => 'date',
+						'order'               => 'DESC',
+						'fields'              => 'ids',
+						'ignore_sticky_posts' => true,
+						'suppress_filters'    => true, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters -- Other plugins' query filters must not inject posts or change the fill.
+					]
+				)
+			);
+
+			$final = array_slice( array_values( array_unique( array_merge( $final, $latest ) ) ), 0, $count );
+		}
+
+		return $final;
+	}
+
+	/**
+	 * Replace the Post Template query of a handpicked Query with the exact picks, or with the
+	 * picks followed by the newest posts when "fill with latest" is on.
 	 *
 	 * @param array     $query_vars Query vars built by core.
 	 * @param \WP_Block $block      The Post Template block.
@@ -183,6 +309,10 @@ class Plugin {
 
 		$ids       = $query[ self::HANDPICKED_KEY ];
 		$post_type = isset( $query['postType'] ) && is_string( $query['postType'] ) && '' !== $query['postType'] ? $query['postType'] : 'post';
+
+		if ( isset( $query[ self::FILL_KEY ] ) && is_int( $query[ self::FILL_KEY ] ) ) {
+			$ids = $this->resolve_fill_ids( $ids, $post_type, $query[ self::FILL_KEY ] );
+		}
 
 		// Fresh array: carries over no taxonomy, search, author, exclude or sticky constraints.
 		// An empty post__in would match all posts, so [0] matches nothing.

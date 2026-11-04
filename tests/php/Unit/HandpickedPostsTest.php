@@ -402,4 +402,357 @@ class HandpickedPostsTest extends UnitTestCase {
 		$this->assertSame( 'publish', $vars['post_status'] );
 		$this->assertArrayNotHasKey( 'perm', $vars );
 	}
+
+	/**
+	 * Build fill-aware handpicked attributes.
+	 *
+	 * @param array<mixed>         $ids   Picked IDs.
+	 * @param array<string, mixed> $meta  Extra rtCarousel metadata (fillWithLatest, numberOfPosts).
+	 * @param array<string, mixed> $query Query overrides.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fill_attrs( array $ids, array $meta = [ 'fillWithLatest' => true ], array $query = [] ): array {
+		$attrs                           = $this->handpicked_attrs( $ids, $query );
+		$attrs['metadata']['rtCarousel'] = array_merge( $attrs['metadata']['rtCarousel'], $meta );
+
+		return $attrs;
+	}
+
+	/**
+	 * Stub get_posts(): the first call resolves published picks, the second returns the fill.
+	 *
+	 * Records the arguments of every call into $calls.
+	 *
+	 * @param array<int, mixed>               $survivors IDs returned for the picks request.
+	 * @param array<int, mixed>               $fill      IDs returned for the fill request.
+	 * @param array<int, array<string,mixed>> $calls     Recorded get_posts() arguments.
+	 *
+	 * @return void
+	 */
+	private function stub_get_posts( array $survivors, array $fill, array &$calls ): void {
+		\Brain\Monkey\Functions\when( 'get_posts' )->alias(
+			function ( array $args ) use ( $survivors, $fill, &$calls ) {
+				$calls[] = $args;
+
+				return isset( $args['post__in'] ) ? $survivors : $fill;
+			}
+		);
+	}
+
+	/**
+	 * Fill off never queries posts, even when a count is stored.
+	 *
+	 * @return void
+	 */
+	public function test_fill_off_keeps_exact_picks_and_skips_get_posts(): void {
+		\Brain\Monkey\Functions\expect( 'get_posts' )->never();
+
+		foreach ( [ [], [ 'fillWithLatest' => false, 'numberOfPosts' => 3 ], [ 'fillWithLatest' => 'true' ], [ 'numberOfPosts' => 3 ] ] as $meta ) {
+			$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [ 9, 4 ], $meta ) ) );
+
+			$this->assertSame( [ 9, 4 ], $vars['post__in'] );
+			$this->assertSame( 2, $vars['posts_per_page'] );
+		}
+	}
+
+	/**
+	 * Fill settings are ignored outside handpicked mode.
+	 *
+	 * @return void
+	 */
+	public function test_latest_mode_ignores_fill_metadata(): void {
+		\Brain\Monkey\Functions\expect( 'get_posts' )->never();
+
+		$attrs                                 = $this->fill_attrs( [ 1 ], [ 'fillWithLatest' => true, 'numberOfPosts' => 5 ] );
+		$attrs['metadata']['rtCarousel']['mode'] = 'latest';
+		$block                                 = self::query_block( $attrs );
+		$plugin                                = $this->plugin();
+		$context                               = [ 'query' => [ 'inherit' => true ] ];
+
+		$this->assertSame( $block, $plugin->filter_handpicked_block_data( $block ) );
+		$this->assertSame( $context, $plugin->filter_handpicked_block_context( $context ) );
+	}
+
+	/**
+	 * Default count is 6: picks first in order, then the newest posts excluding all picks.
+	 *
+	 * @return void
+	 */
+	public function test_fill_default_count_picks_then_latest(): void {
+		$calls = [];
+		$this->stub_get_posts( [ 4, 9 ], [ 50, 49, 48, 47 ], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [ 9, 4 ] ) ) );
+
+		$this->assertSame( [ 4, 9, 50, 49, 48, 47 ], $vars['post__in'], 'Published picks keep stored order from get_posts' );
+		$this->assertSame( 'post__in', $vars['orderby'] );
+		$this->assertSame( 6, $vars['posts_per_page'] );
+		$this->assertSame( 'publish', $vars['post_status'] );
+		$this->assertTrue( $vars['ignore_sticky_posts'] );
+		$this->assertTrue( $vars['no_found_rows'] );
+		$this->assertSame( 0, $vars['offset'] );
+
+		$this->assertCount( 2, $calls );
+		$this->assertSame(
+			[
+				'post_type'           => 'post',
+				'post_status'         => 'publish',
+				'post__in'            => [ 9, 4 ],
+				'orderby'             => 'post__in',
+				'posts_per_page'      => 2,
+				'fields'              => 'ids',
+				'ignore_sticky_posts' => true,
+				'suppress_filters'    => true,
+			],
+			$calls[0]
+		);
+		$this->assertSame(
+			[
+				'post_type'           => 'post',
+				'post_status'         => 'publish',
+				'post__not_in'        => [ 9, 4 ],
+				'posts_per_page'      => 4,
+				'orderby'             => 'date',
+				'order'               => 'DESC',
+				'fields'              => 'ids',
+				'ignore_sticky_posts' => true,
+				'suppress_filters'    => true,
+			],
+			$calls[1]
+		);
+	}
+
+	/**
+	 * Fill ignores the Query's other settings and sticky priority.
+	 *
+	 * @return void
+	 */
+	public function test_fill_ignores_other_query_settings(): void {
+		$calls = [];
+		$this->stub_get_posts( [], [ 7, 6 ], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [], [ 'fillWithLatest' => true, 'numberOfPosts' => 2 ] ) ) );
+
+		$this->assertSame( [ 7, 6 ], $vars['post__in'] );
+		foreach ( [ 's', 'author', 'post__not_in', 'tax_query' ] as $dropped ) {
+			$this->assertArrayNotHasKey( $dropped, $vars );
+		}
+		foreach ( [ 's', 'author', 'tax_query', 'category__in', 'post__in' ] as $dropped ) {
+			$this->assertArrayNotHasKey( $dropped, $calls[0] );
+		}
+		$this->assertSame( [], $calls[0]['post__not_in'], 'The Query exclude [7] does not apply; only picks are excluded' );
+		$this->assertTrue( $calls[0]['ignore_sticky_posts'] );
+		$this->assertArrayNotHasKey( 'offset', $calls[0] );
+		$this->assertArrayNotHasKey( 'perm', $calls[0] );
+	}
+
+	/**
+	 * Counts clamp to 1-20, malformed values default to 6.
+	 *
+	 * @param mixed $stored   Stored numberOfPosts.
+	 * @param int   $expected Count requested from the server.
+	 *
+	 * @return void
+	 */
+	#[DataProvider( 'counts' )]
+	public function test_fill_count_normalization( mixed $stored, int $expected ): void {
+		$calls = [];
+		$this->stub_get_posts( [], range( 100, 140 ), $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [], [ 'fillWithLatest' => true, 'numberOfPosts' => $stored ] ) ) );
+
+		$this->assertSame( $expected, $calls[0]['posts_per_page'] );
+		$this->assertCount( $expected, $vars['post__in'] );
+		$this->assertSame( $expected, $vars['posts_per_page'] );
+	}
+
+	/**
+	 * Data provider for counts.
+	 *
+	 * @return array<string, array{0: mixed, 1: int}>
+	 */
+	public static function counts(): array {
+		return [
+			'one'                => [ 1, 1 ],
+			'three'              => [ 3, 3 ],
+			'twenty'             => [ 20, 20 ],
+			'zero clamps up'     => [ 0, 1 ],
+			'negative clamps up' => [ -5, 1 ],
+			'21 clamps down'     => [ 21, 20 ],
+			'huge clamps down'   => [ 1000000, 20 ],
+			'integer float'      => [ 4.0, 4 ],
+			'huge float'         => [ 1.0e30, 20 ],
+			'fractional'         => [ 2.5, 6 ],
+			'numeric string'     => [ '4', 6 ],
+			'text'               => [ 'abc', 6 ],
+			'bool'               => [ true, 6 ],
+			'null'               => [ null, 6 ],
+			'array'              => [ [ 3 ], 6 ],
+			'infinite'           => [ INF, 6 ],
+			'not a number'       => [ NAN, 6 ],
+		];
+	}
+
+	/**
+	 * More valid picks than the count: first picks only, no fill request.
+	 *
+	 * @return void
+	 */
+	public function test_fill_truncates_extra_picks_without_fill_request(): void {
+		$calls = [];
+		$this->stub_get_posts( [ 1, 2, 3, 4, 5 ], [ 99 ], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [ 1, 2, 3, 4, 5 ], [ 'fillWithLatest' => true, 'numberOfPosts' => 3 ] ) ) );
+
+		$this->assertSame( [ 1, 2, 3 ], $vars['post__in'] );
+		$this->assertCount( 1, $calls );
+		$this->assertSame( 3, $vars['posts_per_page'] );
+	}
+
+	/**
+	 * Exactly the count of valid picks: no fill request either.
+	 *
+	 * @return void
+	 */
+	public function test_fill_skips_fill_request_when_full(): void {
+		$calls = [];
+		$this->stub_get_posts( [ 1, 2 ], [ 99 ], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [ 1, 2 ], [ 'fillWithLatest' => true, 'numberOfPosts' => 2 ] ) ) );
+
+		$this->assertSame( [ 1, 2 ], $vars['post__in'] );
+		$this->assertCount( 1, $calls );
+	}
+
+	/**
+	 * Unavailable picks consume no slots and are excluded from the fill.
+	 *
+	 * @return void
+	 */
+	public function test_fill_replaces_unavailable_picks(): void {
+		$calls = [];
+		// 2 is draft, 999 deleted: only 1 and 3 survive.
+		$this->stub_get_posts( [ 1, 3 ], [ 20, 19 ], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [ 1, 2, 3, 999 ], [ 'fillWithLatest' => true, 'numberOfPosts' => 4 ] ) ) );
+
+		$this->assertSame( [ 1, 3, 20, 19 ], $vars['post__in'] );
+		$this->assertSame( [ 1, 2, 3, 999 ], $calls[1]['post__not_in'], 'Fill excludes every stored pick, including unavailable ones' );
+		$this->assertSame( 2, $calls[1]['posts_per_page'] );
+	}
+
+	/**
+	 * No picks: only the fill request is made, for the whole count.
+	 *
+	 * @return void
+	 */
+	public function test_fill_with_no_picks_shows_latest(): void {
+		$calls = [];
+		$this->stub_get_posts( [ 8, 8 ], [ 30, 29, 28 ], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [], [ 'fillWithLatest' => true, 'numberOfPosts' => 3 ] ) ) );
+
+		$this->assertCount( 1, $calls, 'No request for picks when there are none' );
+		$this->assertSame( [], $calls[0]['post__not_in'] );
+		$this->assertSame( 3, $calls[0]['posts_per_page'] );
+		$this->assertSame( [ 30, 29, 28 ], $vars['post__in'] );
+	}
+
+	/**
+	 * Fewer published posts than the count: only what exists, no gaps.
+	 *
+	 * @return void
+	 */
+	public function test_fill_with_too_few_posts_returns_available_only(): void {
+		$calls = [];
+		$this->stub_get_posts( [ 5 ], [ 4 ], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [ 5 ], [ 'fillWithLatest' => true, 'numberOfPosts' => 10 ] ) ) );
+
+		$this->assertSame( [ 5, 4 ], $vars['post__in'] );
+		$this->assertSame( 2, $vars['posts_per_page'] );
+	}
+
+	/**
+	 * Nothing published at all: matches nothing, never everything.
+	 *
+	 * @return void
+	 */
+	public function test_fill_with_nothing_available_matches_nothing(): void {
+		$calls = [];
+		$this->stub_get_posts( [], [], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [ 5 ] ) ) );
+
+		$this->assertSame( [ 0 ], $vars['post__in'] );
+		$this->assertSame( 1, $vars['posts_per_page'] );
+		$this->assertSame( 'publish', $vars['post_status'] );
+	}
+
+	/**
+	 * The selected post type applies to both requests and the final query.
+	 *
+	 * @return void
+	 */
+	public function test_fill_uses_selected_post_type(): void {
+		$calls = [];
+		$this->stub_get_posts( [ 2 ], [ 3 ], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [ 2 ], [ 'fillWithLatest' => true, 'numberOfPosts' => 2 ], [ 'postType' => 'page' ] ) ) );
+
+		$this->assertSame( 'page', $calls[0]['post_type'] );
+		$this->assertSame( 'page', $calls[1]['post_type'] );
+		$this->assertSame( 'page', $vars['post_type'] );
+	}
+
+	/**
+	 * A post is never repeated, and malformed results are normalized.
+	 *
+	 * @return void
+	 */
+	public function test_fill_never_repeats_a_post(): void {
+		$calls = [];
+		// The fill result repeats pick 1 and contains junk; both must be dropped.
+		$this->stub_get_posts( [ '1', 2 ], [ 1, '3', 0, 'x', 3, 4 ], $calls );
+
+		$vars = $this->final_query_vars( self::query_block( $this->fill_attrs( [ 1, 2 ], [ 'fillWithLatest' => true, 'numberOfPosts' => 5 ] ) ) );
+
+		$this->assertSame( [ 1, 2, 3, 4 ], $vars['post__in'] );
+	}
+
+	/**
+	 * Saved attributes and unrelated metadata are not modified by fill handling.
+	 *
+	 * @return void
+	 */
+	public function test_fill_does_not_modify_saved_block(): void {
+		$block  = self::query_block( $this->fill_attrs( [ 1 ], [ 'fillWithLatest' => true, 'numberOfPosts' => 99 ] ) );
+		$plugin = $this->plugin();
+
+		$this->assertSame( $block, $plugin->filter_handpicked_block_data( $block ) );
+	}
+
+	/**
+	 * Fill config belongs to its own Query: a nested Latest Query is untouched and the outer
+	 * Query's fill applies again once the inner one has finished.
+	 *
+	 * @return void
+	 */
+	public function test_fill_is_scoped_to_its_query(): void {
+		$plugin  = $this->plugin();
+		$context = [ 'query' => [ 'inherit' => true ] ];
+
+		$plugin->filter_handpicked_block_data( self::query_block( $this->fill_attrs( [ 5 ], [ 'fillWithLatest' => true, 'numberOfPosts' => 3 ] ) ) );
+		$plugin->filter_handpicked_block_data( self::query_block( [ 'query' => [ 'inherit' => true ] ] ) );
+		$this->assertSame( $context, $plugin->filter_handpicked_block_context( $context ) );
+		$plugin->pop_handpicked_query( '' );
+
+		$outer = $plugin->filter_handpicked_block_context( $context );
+		$this->assertSame( [ 5 ], $outer['query']['rtCarouselHandpickedIds'] );
+		$this->assertSame( 3, $outer['query']['rtCarouselFillCount'] );
+		$plugin->pop_handpicked_query( '' );
+
+		$this->assertSame( $context, $plugin->filter_handpicked_block_context( $context ) );
+	}
 }

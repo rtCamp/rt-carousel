@@ -66,6 +66,39 @@ jest.mock( '@wordpress/components', () => ( {
 		value: string;
 		onChange: ( v: string ) => void;
 	} ) => <input aria-label={ label } value={ value } onChange={ ( e ) => onChange( e.target.value ) } />,
+	ToggleControl: ( {
+		label,
+		checked,
+		onChange,
+	}: {
+		label: string;
+		checked: boolean;
+		onChange: ( v: boolean ) => void;
+	} ) => (
+		<input type="checkbox" role="switch" aria-label={ label } checked={ checked } onChange={ ( e ) => onChange( e.target.checked ) } />
+	),
+	RangeControl: ( {
+		label,
+		value,
+		min,
+		max,
+		onChange,
+	}: {
+		label: string;
+		value: number;
+		min: number;
+		max: number;
+		onChange: ( v: number | undefined ) => void;
+	} ) => (
+		<input
+			type="number"
+			aria-label={ label }
+			value={ value }
+			min={ min }
+			max={ max }
+			onChange={ ( e ) => onChange( e.target.value === '' ? undefined : Number( e.target.value ) ) }
+		/>
+	),
 	RadioControl: ( {
 		options,
 		selected,
@@ -108,7 +141,7 @@ jest.mock( '@wordpress/data', () => ( {
 } ) );
 
 // eslint-disable-next-line import/first
-import { withHandpickedPosts, MAX_HANDPICKED } from '../handpicked-posts';
+import { withHandpickedPosts, MAX_HANDPICKED, normalizeFillCount } from '../handpicked-posts';
 
 // Registration happens on import; capture before per-test mock resets.
 const registrations = ( addFilter as jest.Mock ).mock.calls.slice();
@@ -464,5 +497,317 @@ describe( 'Post Template preview', () => {
 		mockStores.entityRecords.mockReturnValue( null );
 		render( <Enhanced { ...templateProps } /> );
 		expect( screen.getByTestId( 'core-edit' ) ).toBeInTheDocument();
+	} );
+} );
+
+// Handpicked metadata with fill settings; `fill` merges extra rtCarousel keys.
+const filled = ( ids: number[], fill: Record<string, unknown> = { fillWithLatest: true }, postType = 'post' ) => ( {
+	query: { postType },
+	metadata: { name: 'Keep me', rtCarousel: { mode: 'handpicked', ids, postType, ...fill } },
+} );
+
+/**
+ * Entity mock for fill: `include` requests resolve against `published` (in request order),
+ * everything else is a "latest" request honoring `per_page` and `exclude`.
+ *
+ * @param {Post[]} published Published picks that exist.
+ * @param {Post[]} latest    Newest published posts, newest first.
+ */
+function mockFillEntities( published: Post[], latest: Post[] ) {
+	mockStores.entityRecords.mockImplementation(
+		( _k: string, _type: string, query: { include?: number[]; exclude?: number[]; per_page?: number } ) => {
+			if ( query.include ) {
+				return query.include.map( ( id ) => published.find( ( p ) => p.id === id ) ).filter( Boolean );
+			}
+			return latest.filter( ( p ) => ! query.exclude?.includes( p.id ) ).slice( 0, query.per_page );
+		},
+	);
+}
+
+describe( 'normalizeFillCount', () => {
+	it.each( [
+		[ undefined, 6 ],
+		[ 1, 1 ],
+		[ 20, 20 ],
+		[ 0, 1 ],
+		[ -4, 1 ],
+		[ 21, 20 ],
+		[ 1e9, 20 ],
+		[ 4.0, 4 ],
+		[ 2.5, 6 ],
+		[ '4', 6 ],
+		[ 'abc', 6 ],
+		[ true, 6 ],
+		[ null, 6 ],
+		[ [ 3 ], 6 ],
+		[ NaN, 6 ],
+		[ Infinity, 6 ],
+	] )( '%p becomes %p', ( value, expected ) => {
+		expect( normalizeFillCount( value ) ).toBe( expected );
+	} );
+} );
+
+describe( 'Fill with latest posts: settings', () => {
+	const fillRawMeta = ( setAttributes: jest.Mock ) => setAttributes.mock.calls.at( -1 )[ 0 ].metadata;
+
+	it( 'is off by default, with no number control and no writes', () => {
+		const setAttributes = jest.fn();
+		mockEntities( [ post( 1 ) ] );
+		render( <Enhanced { ...queryProps( handpicked( [ 1 ] ), setAttributes ) } /> );
+
+		expect( screen.getByRole( 'switch', { name: 'Fill with latest posts' } ) ).not.toBeChecked();
+		expect( screen.queryByLabelText( 'Number of posts' ) ).not.toBeInTheDocument();
+		expect( setAttributes ).not.toHaveBeenCalled();
+	} );
+
+	it( 'is hidden outside Handpicked mode', () => {
+		render( <Enhanced { ...queryProps( { query: { postType: 'post' } } ) } /> );
+		expect( screen.queryByRole( 'switch', { name: 'Fill with latest posts' } ) ).not.toBeInTheDocument();
+	} );
+
+	it( 'turning fill on keeps IDs, mode, post type and unrelated metadata, without materializing a count', () => {
+		const setAttributes = jest.fn();
+		mockEntities( [ post( 1 ), post( 2 ) ] );
+		render( <Enhanced { ...queryProps( handpicked( [ 1, 2 ] ), setAttributes ) } /> );
+
+		fireEvent.click( screen.getByRole( 'switch', { name: 'Fill with latest posts' } ) );
+		expect( fillRawMeta( setAttributes ) ).toEqual( {
+			name: 'Keep me',
+			rtCarousel: { mode: 'handpicked', ids: [ 1, 2 ], postType: 'post', fillWithLatest: true },
+		} );
+	} );
+
+	it( 'shows a labelled count with default 6 only while fill is on, with 1-20 bounds', () => {
+		mockEntities( [] );
+		render( <Enhanced { ...queryProps( filled( [] ) ) } /> );
+
+		const count = screen.getByLabelText( 'Number of posts' );
+		expect( count ).toHaveValue( 6 );
+		expect( count ).toHaveAttribute( 'min', '1' );
+		expect( count ).toHaveAttribute( 'max', '20' );
+	} );
+
+	it( 'count changes clamp to 1-20 and keep everything else', () => {
+		const setAttributes = jest.fn();
+		render( <Enhanced { ...queryProps( filled( [ 4 ], { fillWithLatest: true, numberOfPosts: 3 } ), setAttributes ) } /> );
+
+		const count = screen.getByLabelText( 'Number of posts' );
+		const countOf = () => fillRawMeta( setAttributes ).rtCarousel.numberOfPosts;
+
+		fireEvent.change( count, { target: { value: '9' } } );
+		expect( countOf() ).toBe( 9 );
+		fireEvent.change( count, { target: { value: '0' } } );
+		expect( countOf() ).toBe( 1 );
+		fireEvent.change( count, { target: { value: '99' } } );
+		expect( countOf() ).toBe( 20 );
+		fireEvent.change( count, { target: { value: '' } } );
+		expect( countOf() ).toBe( 6 );
+		expect( fillRawMeta( setAttributes ) ).toEqual( {
+			name: 'Keep me',
+			rtCarousel: { mode: 'handpicked', ids: [ 4 ], postType: 'post', fillWithLatest: true, numberOfPosts: 6 },
+		} );
+	} );
+
+	it.each( [
+		[ 0, 1 ],
+		[ 21, 20 ],
+		[ 'abc', 6 ],
+		[ 2.5, 6 ],
+	] )( 'normalizes a stored count of %p to %p for display', ( stored, expected ) => {
+		render( <Enhanced { ...queryProps( filled( [], { fillWithLatest: true, numberOfPosts: stored } ) ) } /> );
+		expect( screen.getByLabelText( 'Number of posts' ) ).toHaveValue( expected );
+	} );
+
+	it( 'keeps fill settings when picks change, moves, mode switches or the count is retained while off', () => {
+		const setAttributes = jest.fn();
+		mockEntities( [ post( 1 ), post( 2 ), post( 3 ) ] );
+		const attrs = filled( [ 1, 2 ], { fillWithLatest: false, numberOfPosts: 9 } );
+		render( <Enhanced { ...queryProps( attrs, setAttributes ) } /> );
+
+		const rt = () => fillRawMeta( setAttributes ).rtCarousel;
+		fireEvent.click( screen.getByRole( 'button', { name: 'Add: Post 3' } ) );
+		expect( rt() ).toEqual( { mode: 'handpicked', ids: [ 1, 2, 3 ], postType: 'post', fillWithLatest: false, numberOfPosts: 9 } );
+		fireEvent.click( screen.getByRole( 'button', { name: 'Move down: Post 1' } ) );
+		expect( rt() ).toMatchObject( { ids: [ 2, 1 ], fillWithLatest: false, numberOfPosts: 9 } );
+		fireEvent.click( screen.getByRole( 'button', { name: 'Remove: Post 1' } ) );
+		expect( rt() ).toMatchObject( { ids: [ 2 ], numberOfPosts: 9 } );
+		fireEvent.click( screen.getByLabelText( 'Latest posts' ) );
+		expect( rt() ).toEqual( { mode: 'latest', ids: [ 1, 2 ], postType: 'post', fillWithLatest: false, numberOfPosts: 9 } );
+	} );
+
+	it( 'keeps fill settings when the post type changes and clears only the picks', () => {
+		const setAttributes = jest.fn();
+		const attrs = { ...filled( [ 1, 2 ], { fillWithLatest: true, numberOfPosts: 8 } ), query: { postType: 'page' } };
+		render( <Enhanced { ...queryProps( attrs, setAttributes ) } /> );
+
+		expect( setAttributes ).toHaveBeenCalledWith( {
+			metadata: {
+				name: 'Keep me',
+				rtCarousel: { mode: 'handpicked', ids: [], postType: 'page', fillWithLatest: true, numberOfPosts: 8 },
+			},
+		} );
+	} );
+
+	it( 'does not touch the five-suggestion list or the 20-pick cap', () => {
+		mockEntities( [], [ post( 100 ) ] );
+		render( <Enhanced { ...queryProps( filled( [], { fillWithLatest: true, numberOfPosts: 20 } ) ) } /> );
+		expect( mockStores.entityRecords ).toHaveBeenCalledWith( 'postType', 'post', {
+			status: 'publish',
+			per_page: 5,
+			order: 'desc',
+			orderby: 'date',
+		} );
+	} );
+} );
+
+describe( 'Fill with latest posts: preview', () => {
+	const templateProps = { name: 'core/post-template', clientId: 'pt', attributes: {}, setAttributes: jest.fn(), context: { queryId: 1, query: { perPage: 2, search: 'x', exclude: [ 4 ] } } };
+	const include = () => JSON.parse( screen.getByTestId( 'core-edit' ).textContent ?? 'null' ).query;
+	const latest = [ post( 90 ), post( 80 ), post( 70 ), post( 60 ), post( 50 ), post( 40 ), post( 30 ) ];
+
+	it( 'composes survivors in saved order, then newest non-picks (default 6)', () => {
+		mockStores.queryAttributes = filled( [ 2, 1 ] );
+		mockFillEntities( [ post( 1 ), post( 2 ) ], [ post( 2 ), ...latest ] );
+		render( <Enhanced { ...templateProps } /> );
+
+		expect( include() ).toEqual( {
+			postType: 'post',
+			include: [ 2, 1, 90, 80, 70, 60 ],
+			orderBy: 'include',
+			perPage: 6,
+			inherit: false,
+			offset: 0,
+			status: 'publish',
+			context: 'view',
+		} );
+		expect( mockStores.entityRecords ).toHaveBeenCalledWith( 'postType', 'post', {
+			status: 'publish',
+			per_page: 4,
+			order: 'desc',
+			orderby: 'date',
+			exclude: [ 2, 1 ],
+		} );
+	} );
+
+	it( 'orders survivors by saved order even if the store returns them differently', () => {
+		mockStores.queryAttributes = filled( [ 3, 1, 2 ], { fillWithLatest: true, numberOfPosts: 3 } );
+		mockStores.entityRecords.mockImplementation( ( _k: string, _t: string, q: { include?: number[] } ) =>
+			q.include ? [ post( 1 ), post( 2 ), post( 3 ) ] : [],
+		);
+		render( <Enhanced { ...templateProps } /> );
+		expect( include().include ).toEqual( [ 3, 1, 2 ] );
+	} );
+
+	it( 'truncates extra picks to the count without requesting fill', () => {
+		mockStores.queryAttributes = filled( [ 1, 2, 3, 4, 5 ], { fillWithLatest: true, numberOfPosts: 3 } );
+		mockFillEntities( [ post( 1 ), post( 2 ), post( 3 ), post( 4 ), post( 5 ) ], latest );
+		render( <Enhanced { ...templateProps } /> );
+
+		expect( include().include ).toEqual( [ 1, 2, 3 ] );
+		expect( include().perPage ).toBe( 3 );
+		const fillRequests = mockStores.entityRecords.mock.calls.filter( ( c ) => ! c[ 2 ].include );
+		expect( fillRequests ).toHaveLength( 0 );
+	} );
+
+	it( 'replaces an unavailable pick from the fill, excluding every pick', () => {
+		mockStores.queryAttributes = filled( [ 1, 2, 3 ], { fillWithLatest: true, numberOfPosts: 3 } );
+		// 2 is draft/deleted.
+		mockFillEntities( [ post( 1 ), post( 3 ) ], latest );
+		render( <Enhanced { ...templateProps } /> );
+
+		expect( include().include ).toEqual( [ 1, 3, 90 ] );
+		expect( mockStores.entityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			expect.objectContaining( { per_page: 1, exclude: [ 1, 2, 3 ] } ),
+		);
+	} );
+
+	it( 'shows the newest N when nothing is picked, without an include-less picks request', () => {
+		mockStores.queryAttributes = filled( [], { fillWithLatest: true, numberOfPosts: 3 } );
+		mockFillEntities( [], latest );
+		render( <Enhanced { ...templateProps } /> );
+
+		expect( include().include ).toEqual( [ 90, 80, 70 ] );
+		expect( screen.queryByText( 'Choose posts to show in this carousel' ) ).not.toBeInTheDocument();
+		const fill = mockStores.entityRecords.mock.calls.find( ( c ) => ! c[ 2 ].include );
+		expect( fill[ 2 ] ).not.toHaveProperty( 'exclude' );
+	} );
+
+	it( 'shows fewer slides when fewer posts exist', () => {
+		mockStores.queryAttributes = filled( [ 1 ], { fillWithLatest: true, numberOfPosts: 10 } );
+		mockFillEntities( [ post( 1 ) ], [ post( 1 ), post( 2 ) ] );
+		render( <Enhanced { ...templateProps } /> );
+
+		expect( include().include ).toEqual( [ 1, 2 ] );
+		expect( include().perPage ).toBe( 2 );
+	} );
+
+	it( 'shows an empty prompt, never include: [], when nothing is published', () => {
+		mockStores.queryAttributes = filled( [ 1 ], { fillWithLatest: true, numberOfPosts: 4 } );
+		mockFillEntities( [], [] );
+		render( <Enhanced { ...templateProps } /> );
+
+		expect( screen.getByText( 'No published posts are available' ) ).toBeInTheDocument();
+		expect( BlockEdit ).not.toHaveBeenCalled();
+	} );
+
+	it( 'shows only a spinner while loading, never previous or partial results', () => {
+		mockStores.queryAttributes = filled( [ 1 ], { fillWithLatest: true, numberOfPosts: 4 } );
+		mockStores.entityRecords.mockImplementation( ( _k: string, _t: string, q: { include?: number[] } ) => ( q.include ? [ post( 1 ) ] : null ) );
+		render( <Enhanced { ...templateProps } /> );
+
+		expect( screen.getByTestId( 'spinner' ) ).toBeInTheDocument();
+		expect( BlockEdit ).not.toHaveBeenCalled();
+
+		mockStores.entityRecords.mockImplementation( () => null );
+		BlockEdit.mockClear();
+		render( <Enhanced { ...templateProps } /> );
+		expect( BlockEdit ).not.toHaveBeenCalled();
+	} );
+
+	it( 'applies the clamped count to malformed stored values', () => {
+		mockStores.queryAttributes = filled( [], { fillWithLatest: true, numberOfPosts: 99 } );
+		mockFillEntities( [], Array.from( { length: 30 }, ( _, i ) => post( 1000 - i ) ) );
+		render( <Enhanced { ...templateProps } /> );
+		expect( include().include ).toHaveLength( 20 );
+	} );
+
+	it( 'works for a Query outside a carousel and updates live with settings', () => {
+		mockStores.parents = [];
+		mockStores.queryAttributes = filled( [ 1 ], { fillWithLatest: true, numberOfPosts: 2 } );
+		mockFillEntities( [ post( 1 ) ], latest );
+		const { rerender } = render( <Enhanced { ...templateProps } /> );
+		expect( include().include ).toEqual( [ 1, 90 ] );
+
+		mockStores.queryAttributes = filled( [ 1 ], { fillWithLatest: true, numberOfPosts: 3 } );
+		rerender( <Enhanced { ...templateProps } /> );
+		expect( include().include ).toEqual( [ 1, 90, 80 ] );
+
+		mockStores.queryAttributes = filled( [ 1 ], { fillWithLatest: false, numberOfPosts: 3 } );
+		rerender( <Enhanced { ...templateProps } /> );
+		expect( include().include ).toEqual( [ 1 ] );
+	} );
+
+	it( 'fill off keeps the original prompts and exact picks', () => {
+		mockStores.queryAttributes = filled( [], { fillWithLatest: false } );
+		render( <Enhanced { ...templateProps } /> );
+		expect( screen.getByText( 'Choose posts to show in this carousel' ) ).toBeInTheDocument();
+	} );
+
+	it( 'fill off with unavailable picks keeps the unavailable prompt', () => {
+		mockStores.queryAttributes = filled( [ 7 ], { fillWithLatest: false, numberOfPosts: 5 } );
+		mockEntities( [] );
+		render( <Enhanced { ...templateProps } /> );
+		expect( screen.getByText( 'No selected published posts are available' ) ).toBeInTheDocument();
+	} );
+
+	it( 'Latest mode ignores fill settings and passes props through', () => {
+		mockStores.queryAttributes = {
+			query: { postType: 'post' },
+			metadata: { rtCarousel: { mode: 'latest', ids: [ 1 ], postType: 'post', fillWithLatest: true, numberOfPosts: 5 } },
+		};
+		render( <Enhanced { ...templateProps } /> );
+		expect( BlockEdit.mock.calls[ 0 ]![ 0 ].context ).toBe( templateProps.context );
 	} );
 } );
