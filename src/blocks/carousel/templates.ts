@@ -7,7 +7,7 @@
  * @package
  */
 
-import { createBlock, type BlockInstance } from '@wordpress/blocks';
+import { createBlock, type Block } from '@wordpress/blocks';
 import { type IconType } from '@wordpress/components';
 import { applyFilters } from '@wordpress/hooks';
 import { __ } from '@wordpress/i18n';
@@ -32,7 +32,7 @@ export interface SlideTemplate {
 	 * Build the inner blocks for a single slide.
 	 * Called once per slide (or not at all for Query Loop templates).
 	 */
-	innerBlocks: () => BlockInstance[];
+	innerBlocks: () => Block[];
 }
 
 // ── Default templates ────────────────────────────────────────────────────────

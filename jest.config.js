@@ -1,18 +1,27 @@
 /**
  * Jest configuration for rtCarousel plugin.
  *
- * Extends @wordpress/scripts default configuration with:
+ * Extends the `@wordpress/jest-preset-default` preset with:
  * - Custom test setup for WordPress and Embla mocks
  * - Module path aliases for cleaner imports
  * - Coverage thresholds to maintain code quality
  *
  * @see https://jestjs.io/docs/configuration
+ * @see https://github.com/WordPress/gutenberg/blob/HEAD/packages/scripts/docs/vitest-migration.md#keep-an-existing-jest-suite
  */
 
-const defaultConfig = require( '@wordpress/scripts/config/jest-unit.config' );
+const defaultConfig = require( '@wordpress/jest-preset-default/jest-preset' );
 
 module.exports = {
-	...defaultConfig,
+	preset: '@wordpress/jest-preset-default',
+
+	// Transpile JS/TS with the WordPress Babel preset
+	transform: {
+		'\\.[jt]sx?$': [
+			'babel-jest',
+			{ presets: [ '@wordpress/babel-preset-default' ] },
+		],
+	},
 
 	// Display name for clarity in multi-project setups
 	displayName: 'rt-carousel',

@@ -74,7 +74,7 @@ function SaveV200( {
 		style: {
 			'--rt-carousel-gap': `${ slideGap }px`,
 			'--rt-carousel-height': axis === 'y' ? height : undefined,
-		} as React.CSSProperties,
+		},
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( blockProps ) as ReturnType<
@@ -170,7 +170,7 @@ function SaveV203( {
 		style: {
 			'--rt-carousel-gap': `${ slideGap }px`,
 			'--rt-carousel-height': axis === 'y' ? height : undefined,
-		} as React.CSSProperties,
+		},
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps.save( blockProps ) as ReturnType<

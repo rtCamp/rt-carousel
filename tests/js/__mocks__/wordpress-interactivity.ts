@@ -1,5 +1,5 @@
 /**
- * Mock for @wordpress/interactivity module.
+ * Mock for `@wordpress/interactivity` module.
  */
 
 export const store = jest.fn( ( _namespace: string, config: unknown ) => config );
