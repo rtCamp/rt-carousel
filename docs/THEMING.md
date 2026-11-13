@@ -8,7 +8,8 @@ Easily theme the carousel using CSS variables or block supports. Navigation bloc
 | Variable | Description |
 | :--- | :--- |
 | `--rt-carousel-gap` | Controlled by the `slideGap` attribute. Applied as margin to slides. |
-| `--rt-carousel-slide-width` | Controls the width of each slide. Defaults to 100% or set by column variants. |
+| `--rt-carousel-slide-width` | Controls the width of each slide. Defaults to 100% or set by column variants. Ignored when `--rt-carousel-slides-per-view` is set. |
+| `--rt-carousel-slides-per-view` | Number of slides visible at once, set inline by the `slidesPerView` attribute. Gap-aware, and takes priority over `--rt-carousel-slide-width`. |
 
 ### Controls (Buttons)
 | Variable                                  | Default                               | Description                 |

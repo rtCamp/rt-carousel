@@ -27,6 +27,7 @@ import { EditorCarouselContext } from './editor-context';
 import type { EmblaCarouselType } from 'embla-carousel';
 import { getSlideTemplates, type SlideTemplate } from './templates';
 import TemplatePicker from './components/TemplatePicker';
+import { getCarouselStyle, MIN_SLIDES_PER_VIEW, MAX_SLIDES_PER_VIEW } from './carousel-style';
 
 type SetupStep = 'slide-count' | 'template';
 
@@ -179,10 +180,7 @@ export default function Edit( {
 		'data-axis': axis,
 		'data-loop': loop ? 'true' : undefined,
 		'data-is-tabs': useTabs ? 'true' : undefined,
-		style: {
-			'--rt-carousel-gap': `${ attributes.slideGap }px`,
-			'--rt-carousel-height': axis === 'y' ? height : undefined,
-		} as React.CSSProperties,
+		style: getCarouselStyle( attributes ),
 	} );
 
 	const innerBlocksProps = useInnerBlocksProps( blockProps, {} );
@@ -478,14 +476,6 @@ export default function Edit( {
 									? __( 'Loop is required for backward auto scroll.', 'rt-carousel' )
 									: __( 'Enables infinite scrolling of slides.', 'rt-carousel' ) }
 							/>
-							{ transition !== 'fade' && (
-								<ToggleControl
-									label={ __( 'Free Drag', 'rt-carousel' ) }
-									checked={ dragFree }
-									onChange={ ( value ) => setAttributes( { dragFree: value } ) }
-									help={ __( 'Enables momentum scrolling.', 'rt-carousel' ) }
-								/>
-							) }
 							<ToggleControl
 								label={ __( 'Lazy Load Images', 'rt-carousel' ) }
 								checked={ lazyLoadImages }
@@ -495,61 +485,78 @@ export default function Edit( {
 									'rt-carousel',
 								) }
 							/>
+							{ /* Fade stacks slides in place, so these slide-layout controls don't apply. */ }
 							{ transition !== 'fade' && (
-								<SelectControl
-									label={ __( 'Alignment', 'rt-carousel' ) }
-									value={ carouselAlign }
-									options={ [
-										{ label: __( 'Start', 'rt-carousel' ), value: 'start' },
-										{ label: __( 'Center', 'rt-carousel' ), value: 'center' },
-										{ label: __( 'End', 'rt-carousel' ), value: 'end' },
-									] }
-									onChange={ ( value ) =>
-										setAttributes( { carouselAlign: value as CarouselAttributes[ 'carouselAlign' ] } )
-									}
-								/>
-							) }
-							{ transition !== 'fade' && (
-								<SelectControl
-									label={ __( 'Contain Scroll', 'rt-carousel' ) }
-									value={ containScroll }
-									options={ [
-										{ label: __( 'Trim Snaps', 'rt-carousel' ), value: 'trimSnaps' },
-										{ label: __( 'Keep Snaps', 'rt-carousel' ), value: 'keepSnaps' },
-										{ label: __( 'None', 'rt-carousel' ), value: '' },
-									] }
-									onChange={ ( value ) =>
-										setAttributes( { containScroll: value as CarouselAttributes[ 'containScroll' ] } )
-									}
-									help={ __(
-										'Prevents excess scrolling at the beginning or end.',
-										'rt-carousel',
+								<>
+									<ToggleControl
+										label={ __( 'Free Drag', 'rt-carousel' ) }
+										checked={ dragFree }
+										onChange={ ( value ) => setAttributes( { dragFree: value } ) }
+										help={ __( 'Enables momentum scrolling.', 'rt-carousel' ) }
+									/>
+									<SelectControl
+										label={ __( 'Alignment', 'rt-carousel' ) }
+										value={ carouselAlign }
+										options={ [
+											{ label: __( 'Start', 'rt-carousel' ), value: 'start' },
+											{ label: __( 'Center', 'rt-carousel' ), value: 'center' },
+											{ label: __( 'End', 'rt-carousel' ), value: 'end' },
+										] }
+										onChange={ ( value ) =>
+											setAttributes( { carouselAlign: value as CarouselAttributes[ 'carouselAlign' ] } )
+										}
+									/>
+									<SelectControl
+										label={ __( 'Contain Scroll', 'rt-carousel' ) }
+										value={ containScroll }
+										options={ [
+											{ label: __( 'Trim Snaps', 'rt-carousel' ), value: 'trimSnaps' },
+											{ label: __( 'Keep Snaps', 'rt-carousel' ), value: 'keepSnaps' },
+											{ label: __( 'None', 'rt-carousel' ), value: '' },
+										] }
+										onChange={ ( value ) =>
+											setAttributes( { containScroll: value as CarouselAttributes[ 'containScroll' ] } )
+										}
+										help={ __(
+											'Prevents excess scrolling at the beginning or end.',
+											'rt-carousel',
+										) }
+									/>
+									<RangeControl
+										label={ __( 'Slides per View', 'rt-carousel' ) }
+										{ ...( attributes.slidesPerView !== undefined && { value: attributes.slidesPerView } ) }
+										onChange={ ( value ) => setAttributes( { slidesPerView: value } ) }
+										min={ MIN_SLIDES_PER_VIEW }
+										max={ MAX_SLIDES_PER_VIEW }
+										allowReset
+										help={ __(
+											'Number of slides visible at once. Overrides the column block styles and Post/Terms Template grid columns. Reset to use them instead.',
+											'rt-carousel',
+										) }
+									/>
+									<ToggleControl
+										label={ __( 'Scroll Auto', 'rt-carousel' ) }
+										checked={ slidesToScroll === 'auto' }
+										onChange={ ( isAuto ) =>
+											setAttributes( { slidesToScroll: isAuto ? 'auto' : '1' } )
+										}
+										help={ __(
+											'Scrolls the number of slides currently visible in the viewport.',
+											'rt-carousel',
+										) }
+									/>
+									{ slidesToScroll !== 'auto' && (
+										<RangeControl
+											label={ __( 'Slides to Scroll', 'rt-carousel' ) }
+											value={ parseInt( slidesToScroll, 10 ) || 1 }
+											onChange={ ( value ) =>
+												setAttributes( { slidesToScroll: ( value || 1 ).toString() } )
+											}
+											min={ 1 }
+											max={ 10 }
+										/>
 									) }
-								/>
-							) }
-							{ transition !== 'fade' && (
-								<ToggleControl
-									label={ __( 'Scroll Auto', 'rt-carousel' ) }
-									checked={ slidesToScroll === 'auto' }
-									onChange={ ( isAuto ) =>
-										setAttributes( { slidesToScroll: isAuto ? 'auto' : '1' } )
-									}
-									help={ __(
-										'Scrolls the number of slides currently visible in the viewport.',
-										'rt-carousel',
-									) }
-								/>
-							) }
-							{ transition !== 'fade' && slidesToScroll !== 'auto' && (
-								<RangeControl
-									label={ __( 'Slides to Scroll', 'rt-carousel' ) }
-									value={ parseInt( slidesToScroll, 10 ) || 1 }
-									onChange={ ( value ) =>
-										setAttributes( { slidesToScroll: ( value || 1 ).toString() } )
-									}
-									min={ 1 }
-									max={ 10 }
-								/>
+								</>
 							) }
 							<SelectControl
 								label={ __( 'Direction', 'rt-carousel' ) }

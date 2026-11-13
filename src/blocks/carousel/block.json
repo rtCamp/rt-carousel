@@ -92,6 +92,9 @@
 			"type": "string",
 			"default": "1"
 		},
+		"slidesPerView": {
+			"type": "number"
+		},
 		"lazyLoadImages": {
 			"type": "boolean",
 			"default": true
